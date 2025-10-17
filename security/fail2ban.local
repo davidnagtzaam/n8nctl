@@ -1,0 +1,48 @@
+# ============================================================================
+# Fail2ban Configuration for n8n Deployment
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This configuration protects against brute-force attacks
+#
+# Installation:
+#   sudo apt-get install fail2ban
+#   sudo cp security/fail2ban.local /etc/fail2ban/jail.local
+#   sudo systemctl restart fail2ban
+# ============================================================================
+
+[DEFAULT]
+# Ban for 1 hour
+bantime = 3600
+
+# Check for attacks in 10 minute windows
+findtime = 600
+
+# Ban after 5 failed attempts
+maxretry = 5
+
+# Email notifications (configure if desired)
+# destemail = admin@example.com
+# sendername = Fail2ban
+# action = %(action_mwl)s
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 3600
+
+[traefik-auth]
+enabled = true
+port = http,https
+filter = traefik-auth
+logpath = /var/log/traefik/access.log
+maxretry = 5
+bantime = 3600
+
+# Create filter at /etc/fail2ban/filter.d/traefik-auth.conf:
+# [Definition]
+# failregex = ^<HOST> - \S+ \[\] \"(GET|POST|HEAD) .+\" (401|403) .+$
+# ignoreregex =

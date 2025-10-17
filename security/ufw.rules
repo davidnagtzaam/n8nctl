@@ -1,0 +1,36 @@
+# ============================================================================
+# UFW Firewall Rules for n8n Deployment
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# Apply these rules to secure your n8n server
+#
+# Usage:
+#   sudo ufw --force reset
+#   sudo bash -c 'cat security/ufw.rules | while read rule; do
+#     [[ "$rule" =~ ^#.*$ || -z "$rule" ]] || eval "ufw $rule"
+#   done'
+#   sudo ufw enable
+# ============================================================================
+
+# Default policies
+default deny incoming
+default allow outgoing
+default deny routed
+
+# Allow SSH (customize port if needed)
+allow 22/tcp comment 'SSH'
+
+# Allow HTTP and HTTPS for Traefik
+allow 80/tcp comment 'HTTP - Traefik'
+allow 443/tcp comment 'HTTPS - Traefik'
+
+# Allow Docker network communication (if needed)
+# allow from 172.16.0.0/12 comment 'Docker networks'
+
+# Rate limiting on SSH to prevent brute force
+limit 22/tcp comment 'Rate limit SSH'
+
+# Log denied connections
+logging on
+logging medium

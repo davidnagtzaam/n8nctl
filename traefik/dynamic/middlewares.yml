@@ -1,0 +1,45 @@
+# ============================================================================
+# Traefik Dynamic Middlewares Configuration
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# Additional middlewares for authentication, rate limiting, and other
+# request processing.
+# ============================================================================
+
+http:
+  middlewares:
+    # Rate limiting for n8n
+    n8n-ratelimit:
+      rateLimit:
+        average: 200
+        period: 1m
+        burst: 100
+    
+    # IP whitelist (example - uncomment and configure if needed)
+    # ip-whitelist:
+    #   ipWhiteList:
+    #     sourceRange:
+    #       - 127.0.0.1/32
+    #       - 10.0.0.0/8
+    #       - 172.16.0.0/12
+    #       - 192.168.0.0/16
+    
+    # Basic auth (example - uncomment and configure if needed)
+    # Generate password with: htpasswd -nb username password
+    # basic-auth:
+    #   basicAuth:
+    #     users:
+    #       - "admin:$apr1$..." # htpasswd generated hash
+    
+    # Redirect to HTTPS
+    https-redirect:
+      redirectScheme:
+        scheme: https
+        permanent: true
+    
+    # Strip prefix (if needed for path-based routing)
+    # strip-prefix:
+    #   stripPrefix:
+    #     prefixes:
+    #       - /api/v1

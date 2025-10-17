@@ -1,0 +1,275 @@
+# ============================================================================
+# n8n Production Deployment - Docker Compose Configuration
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+# 
+# Architecture:
+# - Traefik: Reverse proxy with automatic HTTPS
+# - Redis: Queue backend for scalable execution
+# - n8n-web: Main web interface (handles UI and webhooks)
+# - n8n-worker: Background job processor (can be scaled horizontally)
+#
+# Usage:
+#   docker compose up -d                    # Start all services
+#   docker compose logs -f n8n-web          # View logs
+#   docker compose up -d --scale n8n-worker=3  # Scale workers
+#
+# For local PostgreSQL, also use:
+#   docker compose -f compose.yaml -f compose.local-db.yaml up -d
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # TRAEFIK - Reverse Proxy with Automatic HTTPS
+  # ==========================================================================
+  traefik:
+    image: traefik:v3.1
+    container_name: n8n-traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command:
+      # Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=${DOCKER_NETWORK_NAME:-n8n-network}"
+      
+      # File provider for additional config
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      
+      # HTTP to HTTPS redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      
+      # Let's Encrypt
+      - "--certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      
+      # Logging
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+      
+      # Dashboard (only enable with authentication)
+      - "--api.dashboard=${TRAEFIK_DASHBOARD_ENABLED:-false}"
+    
+    ports:
+      - "80:80"
+      - "443:443"
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik-acme:/acme.json
+      - traefik-logs:/var/log/traefik
+    
+    networks:
+      - n8n-network
+    
+    labels:
+      - "traefik.enable=false"
+    
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ==========================================================================
+  # REDIS - Queue Backend for Scalable Execution
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    
+    command: 
+      - redis-server
+      - --save ""
+      - --appendonly no
+      - --maxmemory 512mb
+      - --maxmemory-policy allkeys-lru
+    
+    volumes:
+      - redis-data:/data
+    
+    networks:
+      - n8n-network
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    
+    security_opt:
+      - no-new-privileges:true
+
+  # ==========================================================================
+  # N8N WEB - Main Web Interface & Webhook Handler
+  # ==========================================================================
+  n8n-web:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n-web
+    restart: unless-stopped
+    
+    env_file: .env
+    
+    environment:
+      # Core settings
+      - N8N_PORT=${N8N_PORT:-5678}
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-https}
+      - N8N_HOST=${N8N_HOST}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
+      
+      # Database (external PostgreSQL via DATABASE_URL in .env)
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_HOST=${POSTGRES_HOST:-postgres}
+      - DB_POSTGRESDB_PORT=${POSTGRES_PORT:-5432}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-n8n}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Queue configuration
+      - EXECUTIONS_MODE=${EXECUTIONS_MODE:-queue}
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST:-redis}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT:-6379}
+      - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB:-0}
+      
+      # Public API
+      - N8N_PUBLIC_API_DISABLED=${N8N_PUBLIC_API_DISABLED:-false}
+      
+      # This service runs the main process
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=false
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    networks:
+      - n8n-network
+    
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`${N8N_HOST}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+      
+      # Rate limiting middleware
+      - "traefik.http.routers.n8n.middlewares=n8n-ratelimit@file,security-headers@file"
+    
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    # Volume for local binary data storage
+    # Used when N8N_DEFAULT_BINARY_DATA_MODE=default
+    volumes:
+      - n8n-data:/home/node/.n8n
+
+  # ==========================================================================
+  # N8N WORKER - Background Job Processor (Scalable)
+  # ==========================================================================
+  n8n-worker:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    
+    env_file: .env
+    
+    environment:
+      # Database (same as web)
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+      - DB_POSTGRESDB_HOST=${POSTGRES_HOST:-postgres}
+      - DB_POSTGRESDB_PORT=${POSTGRES_PORT:-5432}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER:-n8n}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Queue configuration
+      - EXECUTIONS_MODE=${EXECUTIONS_MODE:-queue}
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST:-redis}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT:-6379}
+      - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB:-0}
+      
+      # Worker-specific: disable the main process
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
+      
+      # Worker concurrency
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-10}
+    
+    command: ["n8n", "worker"]
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    networks:
+      - n8n-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'n8n worker' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    # Volume for local binary data storage (shared with n8n-web)
+    # Used when N8N_DEFAULT_BINARY_DATA_MODE=default
+    volumes:
+      - n8n-data:/home/node/.n8n
+    
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+# ==========================================================================
+# NETWORKS
+# ==========================================================================
+networks:
+  n8n-network:
+    name: ${DOCKER_NETWORK_NAME:-n8n-network}
+    driver: bridge
+
+# ==========================================================================
+# VOLUMES
+# ==========================================================================
+volumes:
+  traefik-acme:
+    name: n8n-traefik-acme
+  traefik-logs:
+    name: n8n-traefik-logs
+  redis-data:
+    name: n8n-redis-data
+  n8n-data:
+    name: n8n-data
+    # Stores n8n binary data when using local filesystem storage
+    # Mount point: /home/node/.n8n inside containers

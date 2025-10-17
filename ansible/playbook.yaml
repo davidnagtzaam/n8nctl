@@ -1,0 +1,245 @@
+---
+# ============================================================================
+# Ansible Playbook for n8n Deployment
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This playbook automates the deployment of n8n across multiple servers
+#
+# Usage:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml
+#
+# With specific host:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml --limit n8n-prod
+#
+# Dry run:
+#   ansible-playbook -i ansible/inventory.ini ansible/playbook.yaml --check
+# ============================================================================
+
+- name: Deploy n8n Production Stack
+  hosts: n8n_servers
+  become: yes
+  gather_facts: yes
+
+  vars:
+    n8n_install_dir: /opt/n8n-deploy
+    n8n_repo_url: https://github.com/davidnagtzaam/n8n-deploy.git
+
+  tasks:
+    # ========================================================================
+    # System Preparation
+    # ========================================================================
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - git
+          - ufw
+          - fail2ban
+          - htop
+          - vim
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # ========================================================================
+    # Docker Installation
+    # ========================================================================
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: "{{ docker_users | default([]) }}"
+      when: docker_users is defined
+
+    # ========================================================================
+    # Firewall Configuration
+    # ========================================================================
+    - name: Configure UFW defaults
+      ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+
+    - name: Allow SSH
+      ufw:
+        rule: limit
+        port: '22'
+        proto: tcp
+
+    - name: Allow HTTP and HTTPS
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - '80'
+        - '443'
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    # ========================================================================
+    # Fail2ban Configuration
+    # ========================================================================
+    - name: Start and enable Fail2ban
+      systemd:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    # ========================================================================
+    # n8n Deployment
+    # ========================================================================
+    - name: Check if n8n is already installed
+      stat:
+        path: "{{ n8n_install_dir }}"
+      register: n8n_dir
+
+    - name: Clone n8n deployment repository
+      git:
+        repo: "{{ n8n_repo_url }}"
+        dest: "{{ n8n_install_dir }}"
+        version: main
+        force: yes
+      when: not n8n_dir.stat.exists
+
+    - name: Make scripts executable
+      file:
+        path: "{{ n8n_install_dir }}/scripts"
+        mode: '0755'
+        recurse: yes
+
+    - name: Check if .env exists
+      stat:
+        path: "{{ n8n_install_dir }}/.env"
+      register: env_file
+
+    - name: Display manual configuration message
+      debug:
+        msg: |
+          ====================================================================
+          n8n repository cloned successfully to {{ n8n_install_dir }}
+          
+          Next steps:
+          1. SSH into the server: ssh {{ ansible_user }}@{{ ansible_host }}
+          2. Run the interactive setup: cd {{ n8n_install_dir }} && sudo bash scripts/init.sh
+          3. Follow the prompts to configure your deployment
+          
+          Or, create .env file manually and run:
+          cd {{ n8n_install_dir }} && docker compose up -d
+          ====================================================================
+      when: not env_file.stat.exists
+
+    # ========================================================================
+    # Optional: Deploy from existing .env (if provided)
+    # ========================================================================
+    - name: Copy .env file if provided
+      copy:
+        src: "{{ playbook_dir }}/.env.{{ inventory_hostname }}"
+        dest: "{{ n8n_install_dir }}/.env"
+        mode: '0600'
+      when: 
+        - env_file.stat.exists == false
+        - lookup('fileglob', playbook_dir + '/.env.' + inventory_hostname) != ''
+
+    - name: Start n8n services
+      shell: |
+        cd {{ n8n_install_dir }}
+        if [ -f .env ]; then
+          if docker compose ps postgres &>/dev/null; then
+            docker compose -f compose.yaml -f compose.local-db.yaml up -d
+          else
+            docker compose up -d
+          fi
+        fi
+      when: env_file.stat.exists
+
+    # ========================================================================
+    # System Hardening
+    # ========================================================================
+    - name: Disable root SSH login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: Restart SSH
+
+    - name: Disable password authentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      notify: Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      systemd:
+        name: sshd
+        state: restarted
+
+# ============================================================================
+# Post-Deployment Tasks
+# ============================================================================
+- name: Post-Deployment Information
+  hosts: n8n_servers
+  gather_facts: no
+  tasks:
+    - name: Display completion message
+      debug:
+        msg: |
+          ====================================================================
+          n8n Deployment Complete!
+          
+          Server: {{ inventory_hostname }}
+          Installation Directory: {{ n8n_install_dir }}
+          
+          Useful commands:
+          • Check status:     cd {{ n8n_install_dir }} && make status
+          • View logs:        cd {{ n8n_install_dir }} && make logs
+          • Create backup:    cd {{ n8n_install_dir }} && sudo make backup
+          • Upgrade:          cd {{ n8n_install_dir }} && sudo make upgrade
+          
+          Created by: David Nagtzaam - https://davidnagtzaam.com
+          ====================================================================
