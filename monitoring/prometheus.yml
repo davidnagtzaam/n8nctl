@@ -1,0 +1,65 @@
+# ============================================================================
+# Prometheus Configuration for n8n Monitoring (Optional)
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This configuration provides monitoring for your n8n deployment
+# 
+# To enable monitoring:
+# 1. Uncomment prometheus and grafana services in compose.yaml
+# 2. Restart services: docker compose up -d
+# 3. Access Grafana at: http://your-server:3000 (admin/admin)
+# ============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'n8n-monitor'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "rules/*.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Docker daemon metrics (requires Docker with metrics enabled)
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+
+  # PostgreSQL metrics (requires postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Redis metrics (requires redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Traefik metrics (if enabled in traefik.yml)
+  - job_name: 'traefik'
+    static_configs:
+      - targets: ['traefik:8082']
+
+  # Node exporter for system metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # cAdvisor for container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

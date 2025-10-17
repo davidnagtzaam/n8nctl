@@ -1,0 +1,57 @@
+# ============================================================================
+# Traefik Dynamic TLS Configuration
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This file defines TLS settings and security headers that are applied
+# dynamically without restarting Traefik.
+# ============================================================================
+
+# TLS Configuration
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_AES_256_GCM_SHA384
+        - TLS_AES_128_GCM_SHA256
+        - TLS_CHACHA20_POLY1305_SHA256
+      sniStrict: true
+      preferServerCipherSuites: true
+
+# HTTP Configuration
+http:
+  middlewares:
+    # Security Headers
+    security-headers:
+      headers:
+        # Browser security headers
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        
+        # Custom security headers
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"
+          X-Forwarded-Proto: "https"
+        
+        # Content Security Policy
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'"
+    
+    # Rate Limiting
+    rate-limit:
+      rateLimit:
+        average: 100
+        period: 1m
+        burst: 50
+    
+    # Compression
+    compression:
+      compress: {}

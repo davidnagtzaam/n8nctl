@@ -1,0 +1,80 @@
+# ============================================================================
+# Traefik Static Configuration
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This file defines Traefik's core behavior and is loaded at startup.
+# For runtime configuration, see the dynamic/ folder.
+# ============================================================================
+
+# Global settings
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# Logging
+log:
+  level: INFO
+  format: common
+
+# Access logs
+accessLog:
+  filePath: /var/log/traefik/access.log
+  format: common
+  bufferingSize: 100
+
+# API and Dashboard (disabled by default for security)
+api:
+  dashboard: false
+  insecure: false
+
+# Entrypoints
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  
+  websecure:
+    address: :443
+    http:
+      tls:
+        certResolver: letsencrypt
+
+# Certificate Resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ${TRAEFIK_ACME_EMAIL}
+      storage: /acme.json
+      tlsChallenge: {}
+
+# Providers
+providers:
+  docker:
+    endpoint: unix:///var/run/docker.sock
+    exposedByDefault: false
+    network: n8n-network
+    watch: true
+  
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+# Ping endpoint for health checks
+ping:
+  entryPoint: traefik
+
+# Metrics (optional - uncomment to enable)
+# metrics:
+#   prometheus:
+#     addEntryPointsLabels: true
+#     addServicesLabels: true
+#     buckets:
+#       - 0.1
+#       - 0.3
+#       - 1.2
+#       - 5.0

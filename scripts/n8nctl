@@ -1,0 +1,305 @@
+#!/usr/bin/env bash
+# ============================================================================
+# n8n Production Deployment - CLI Control Tool (n8nctl)
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# Convenient CLI wrapper for common n8n operations
+# ============================================================================
+
+set -euo pipefail
+
+# Load shared UI library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../lib/lib-ui.sh"
+
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+print_help() {
+    if $USE_GUM; then
+        gum style \
+            --foreground 212 \
+            --border-foreground 57 \
+            --border rounded \
+            --align center \
+            --width 70 \
+            --margin "1 0" \
+            --padding "1 2" \
+            --bold \
+            "n8nctl - n8n Control Tool"
+        
+        echo ""
+        gum style --foreground 6 --bold "Usage:"
+        echo "  n8nctl <command> [options]"
+        echo ""
+        
+        gum style --foreground 6 --bold "Commands:"
+        echo "  $(gum style --foreground 2)status$(gum style --foreground 7)              Show service status"
+        echo "  $(gum style --foreground 2)logs$(gum style --foreground 7) [service]      View logs (all or specific service)"
+        echo "  $(gum style --foreground 2)restart$(gum style --foreground 7)             Restart all services"
+        echo "  $(gum style --foreground 2)stop$(gum style --foreground 7)                Stop all services"
+        echo "  $(gum style --foreground 2)start$(gum style --foreground 7)               Start all services"
+        echo "  $(gum style --foreground 2)test$(gum style --foreground 7)                Run deployment tests"
+        echo "  $(gum style --foreground 2)validate$(gum style --foreground 7)            Validate environment configuration"
+        echo "  $(gum style --foreground 2)migrate$(gum style --foreground 7)             Safe version migration"
+        echo "  $(gum style --foreground 2)upgrade$(gum style --foreground 7)             Upgrade to latest version"
+        echo "  $(gum style --foreground 2)backup$(gum style --foreground 7)              Create backup"
+        echo "  $(gum style --foreground 2)restore$(gum style --foreground 7) <file>      Restore from backup"
+        echo "  $(gum style --foreground 2)scale$(gum style --foreground 7) <count>       Scale workers to <count>"
+        echo "  $(gum style --foreground 2)health$(gum style --foreground 7)              Run health checks"
+        echo "  $(gum style --foreground 2)version$(gum style --foreground 7)             Show n8n version"
+        echo "  $(gum style --foreground 2)shell$(gum style --foreground 7) <service>     Open shell in container"
+        echo "  $(gum style --foreground 2)exec$(gum style --foreground 7) <service> <cmd> Execute command in container"
+        echo "  $(gum style --foreground 2)help$(gum style --foreground 7)                Show this help"
+        echo ""
+        
+        gum style --foreground 6 --bold "Examples:"
+        echo "  n8nctl status"
+        echo "  n8nctl logs n8n-web"
+        echo "  n8nctl scale 5"
+        echo "  n8nctl backup"
+        echo "  n8nctl restore /tmp/backup.tgz"
+        echo ""
+        
+        gum style --foreground 5 "Created by: David Nagtzaam - https://davidnagtzaam.com"
+    else
+        echo ""
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${CYAN}${BOLD}n8nctl - n8n Control Tool${NC}"
+        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${CYAN}Usage:${NC}"
+        echo "  n8nctl <command> [options]"
+        echo ""
+        echo -e "${CYAN}Commands:${NC}"
+        echo -e "  ${GREEN}status${NC}              Show service status"
+        echo -e "  ${GREEN}logs${NC} [service]      View logs (all or specific service)"
+        echo -e "  ${GREEN}restart${NC}             Restart all services"
+        echo -e "  ${GREEN}stop${NC}                Stop all services"
+        echo -e "  ${GREEN}start${NC}               Start all services"
+        echo -e "  ${GREEN}test${NC}                Run deployment tests"
+        echo -e "  ${GREEN}validate${NC}            Validate environment configuration"
+        echo -e "  ${GREEN}migrate${NC}             Safe version migration"
+        echo -e "  ${GREEN}upgrade${NC}             Upgrade to latest version"
+        echo -e "  ${GREEN}backup${NC}              Create backup"
+        echo -e "  ${GREEN}restore${NC} <file>      Restore from backup"
+        echo -e "  ${GREEN}scale${NC} <count>       Scale workers to <count>"
+        echo -e "  ${GREEN}health${NC}              Run health checks"
+        echo -e "  ${GREEN}version${NC}             Show n8n version"
+        echo -e "  ${GREEN}shell${NC} <service>     Open shell in container"
+        echo -e "  ${GREEN}exec${NC} <service> <cmd> Execute command in container"
+        echo -e "  ${GREEN}help${NC}                Show this help"
+        echo ""
+        echo -e "${CYAN}Examples:${NC}"
+        echo "  n8nctl status"
+        echo "  n8nctl logs n8n-web"
+        echo "  n8nctl scale 5"
+        echo "  n8nctl backup"
+        echo "  n8nctl restore /tmp/backup.tgz"
+        echo ""
+        echo -e "${CYAN}Created by:${NC} David Nagtzaam - https://davidnagtzaam.com"
+        echo ""
+    fi
+}
+
+cmd_status() {
+    cd "$PROJECT_ROOT"
+    print_info "Service Status:"
+    docker compose ps
+}
+
+cmd_logs() {
+    cd "$PROJECT_ROOT"
+    local service="${1:-}"
+    
+    if [[ -z "$service" ]]; then
+        docker compose logs -f --tail=100
+    else
+        docker compose logs -f --tail=100 "$service"
+    fi
+}
+
+cmd_restart() {
+    cd "$PROJECT_ROOT"
+    print_info "Restarting services..."
+    show_spinner "Restarting containers" \
+        docker compose restart
+    print_success "Services restarted"
+}
+
+cmd_stop() {
+    cd "$PROJECT_ROOT"
+    print_info "Stopping services..."
+    show_spinner "Stopping containers" \
+        docker compose down
+    print_success "Services stopped"
+}
+
+cmd_start() {
+    cd "$PROJECT_ROOT"
+    print_info "Starting services..."
+    
+    if docker compose ps 2>/dev/null | grep -q "postgres"; then
+        show_spinner "Starting containers" \
+            docker compose -f compose.yaml -f compose.local-db.yaml up -d
+    else
+        show_spinner "Starting containers" \
+            docker compose up -d
+    fi
+    
+    print_success "Services started"
+}
+
+cmd_upgrade() {
+    bash "$SCRIPT_DIR/upgrade.sh"
+}
+
+cmd_backup() {
+    bash "$SCRIPT_DIR/backup.sh"
+}
+
+cmd_restore() {
+    local backup_file="${1:-}"
+    
+    if [[ -z "$backup_file" ]]; then
+        print_error "Backup file required"
+        echo "Usage: n8nctl restore <backup-file.tgz>"
+        exit 1
+    fi
+    
+    bash "$SCRIPT_DIR/restore.sh" "$backup_file"
+}
+
+cmd_scale() {
+    local count="${1:-}"
+    
+    if [[ -z "$count" ]]; then
+        print_error "Worker count required"
+        echo "Usage: n8nctl scale <count>"
+        exit 1
+    fi
+    
+    cd "$PROJECT_ROOT"
+    print_info "Scaling workers to $count replicas..."
+    show_spinner "Scaling workers" \
+        docker compose up -d --scale n8n-worker="$count"
+    print_success "Scaled to $count workers"
+}
+
+cmd_health() {
+    bash "$SCRIPT_DIR/healthcheck.sh"
+}
+
+cmd_test() {
+    bash "$SCRIPT_DIR/test.sh"
+}
+
+cmd_validate() {
+    bash "$SCRIPT_DIR/validate-env.sh"
+}
+
+cmd_migrate() {
+    sudo bash "$SCRIPT_DIR/migrate.sh"
+}
+
+cmd_version() {
+    cd "$PROJECT_ROOT"
+    if docker compose ps | grep -q "n8n-web"; then
+        print_info "n8n Version:"
+        docker compose exec -T n8n-web n8n --version
+    else
+        print_error "n8n-web is not running"
+        exit 1
+    fi
+}
+
+cmd_shell() {
+    local service="${1:-n8n-web}"
+    
+    cd "$PROJECT_ROOT"
+    print_info "Opening shell in $service..."
+    docker compose exec "$service" sh
+}
+
+cmd_exec() {
+    local service="${1:-}"
+    shift
+    local command=("$@")
+    
+    if [[ -z "$service" ]]; then
+        print_error "Service name required"
+        echo "Usage: n8nctl exec <service> <command>"
+        exit 1
+    fi
+    
+    cd "$PROJECT_ROOT"
+    docker compose exec "$service" "${command[@]}"
+}
+
+# Main execution
+main() {
+    local command="${1:-help}"
+    shift || true
+    
+    case "$command" in
+        status)
+            cmd_status "$@"
+            ;;
+        logs)
+            cmd_logs "$@"
+            ;;
+        restart)
+            cmd_restart "$@"
+            ;;
+        stop)
+            cmd_stop "$@"
+            ;;
+        start)
+            cmd_start "$@"
+            ;;
+        test)
+            cmd_test "$@"
+            ;;
+        validate)
+            cmd_validate "$@"
+            ;;
+        migrate)
+            cmd_migrate "$@"
+            ;;
+        upgrade)
+            cmd_upgrade "$@"
+            ;;
+        backup)
+            cmd_backup "$@"
+            ;;
+        restore)
+            cmd_restore "$@"
+            ;;
+        scale)
+            cmd_scale "$@"
+            ;;
+        health)
+            cmd_health "$@"
+            ;;
+        version)
+            cmd_version "$@"
+            ;;
+        shell)
+            cmd_shell "$@"
+            ;;
+        exec)
+            cmd_exec "$@"
+            ;;
+        help|--help|-h)
+            print_help
+            ;;
+        *)
+            echo -e "${RED}[ERROR] Unknown command: $command${NC}"
+            echo ""
+            print_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

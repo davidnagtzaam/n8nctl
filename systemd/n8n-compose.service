@@ -1,0 +1,63 @@
+# ============================================================================
+# n8n Docker Compose Systemd Service
+# ============================================================================
+# Created by: David Nagtzaam - https://davidnagtzaam.com
+#
+# This service ensures n8n starts automatically on system boot
+#
+# Installation (done automatically by init.sh):
+#   sudo cp systemd/n8n-compose.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable n8n-compose
+#   sudo systemctl start n8n-compose
+#
+# Management:
+#   sudo systemctl status n8n-compose
+#   sudo systemctl restart n8n-compose
+#   sudo systemctl stop n8n-compose
+# ============================================================================
+
+[Unit]
+Description=n8n Workflow Automation - Docker Compose Stack
+Documentation=https://docs.n8n.io
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+# Working directory (update this during installation)
+WorkingDirectory=/opt/n8n-deploy
+
+# Start command (automatically detects local vs external DB)
+ExecStartPre=/bin/bash -c 'docker compose ps postgres &>/dev/null && export USE_LOCAL_DB=true || export USE_LOCAL_DB=false'
+ExecStart=/bin/bash -c 'if docker compose ps postgres &>/dev/null; then docker compose -f compose.yaml -f compose.local-db.yaml up -d; else docker compose up -d; fi'
+
+# Stop command
+ExecStop=/usr/bin/docker compose down
+
+# Reload command
+ExecReload=/bin/bash -c 'if docker compose ps postgres &>/dev/null; then docker compose -f compose.yaml -f compose.local-db.yaml restart; else docker compose restart; fi'
+
+# Restart settings
+Restart=on-failure
+RestartSec=30s
+
+# Timeouts
+TimeoutStartSec=300
+TimeoutStopSec=120
+
+# Resource limits (optional, uncomment to enable)
+# MemoryMax=4G
+# CPUQuota=200%
+
+# Security settings
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+ReadWritePaths=/opt/n8n-deploy
+
+[Install]
+WantedBy=multi-user.target
