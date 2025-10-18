@@ -22,8 +22,8 @@
   gather_facts: yes
 
   vars:
-    n8n_install_dir: /opt/n8n-deploy
-    n8n_repo_url: https://github.com/davidnagtzaam/n8n-deploy.git
+    n8n_install_dir: /opt/n8nctl
+    n8n_repo_url: https://github.com/davidnagtzaam/n8nctl.git
 
   tasks:
     # ========================================================================

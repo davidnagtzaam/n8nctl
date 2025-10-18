@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================================
-# n8n Production Deployment - Shared UI Library
+# BashingUI - UI Library
 # ============================================================================
 # Created by: David Nagtzaam - https://davidnagtzaam.com
 #
-# This library provides beautiful terminal UI with gum (Charm.sh) integration
+# BashingUI provides beautiful experience with gum (Charm.sh) integration
 # and automatic fallbacks for environments without gum or TTY.
+# 
+# UI Modes:
+#   - BashingUI (with gum): Enhanced beautiful interface
+#   - Basic (without gum): Clean fallback with colors
 #
 # Usage in scripts:
 #   source "$(dirname "$0")/lib-ui.sh"
@@ -15,6 +19,10 @@
 #   apt install gum           # Ubuntu/Debian (from Charm repo)
 #   go install github.com/charmbracelet/gum@latest
 # ============================================================================
+
+# Load configuration library
+SCRIPT_DIR_UI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR_UI/lib-config.sh"
 
 # ============================================================================
 # Environment Detection
@@ -61,29 +69,48 @@ fi
 # Export for use in other scripts
 export HAS_GUM HAS_TTY USE_GUM
 
-# Offer to install gum if not present (only once per session)
-if ! $HAS_GUM && $HAS_TTY && [[ -z "${GUM_INSTALL_OFFERED:-}" ]]; then
-    export GUM_INSTALL_OFFERED=1
-    
+# Check user's UI preference from config
+ui_mode=$(config_get "ui_mode" "auto")
+
+# Offer to install gum if not present and user hasn't decided yet
+if ! $HAS_GUM && $HAS_TTY && [ "$ui_mode" = "auto" ]; then
     echo ""
-    echo "Enhanced UI available with 'gum' - install for better experience?"
+    echo "BashingUI available with 'gum' - install for enhanced experience?"
     read -p "Install gum? [y/N]: " -n 1 -r
     echo ""
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         if command -v brew &> /dev/null; then
             echo "Installing via brew..."
-            brew install gum && HAS_GUM=true && USE_GUM=true
+            if brew install gum; then
+                HAS_GUM=true
+                USE_GUM=true
+                config_set "ui_mode" "bashing"
+            fi
         elif command -v apt-get &> /dev/null; then
             echo "Installing via apt..."
             sudo mkdir -p /etc/apt/keyrings
             curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
             echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-            sudo apt update && sudo apt install -y gum && HAS_GUM=true && USE_GUM=true
+            if sudo apt update && sudo apt install -y gum; then
+                HAS_GUM=true
+                USE_GUM=true
+                config_set "ui_mode" "bashing"
+            fi
         else
             echo "Please install gum manually: https://github.com/charmbracelet/gum"
+            config_set "ui_mode" "basic"
         fi
+    else
+        # User declined, remember their choice
+        config_set "ui_mode" "basic"
     fi
+elif [ "$ui_mode" = "bashing" ] && $HAS_GUM && $HAS_TTY; then
+    # User prefers BashingUI and has gum
+    USE_GUM=true
+elif [ "$ui_mode" = "basic" ]; then
+    # User prefers basic UI
+    USE_GUM=false
 fi
 
 # ============================================================================

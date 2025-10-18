@@ -17,7 +17,7 @@
 #   make restore       Restore from backup
 # ============================================================================
 
-.PHONY: help init preflight up up-local down restart logs logs-web logs-worker logs-traefik status ps upgrade backup restore clean scale-workers health shell-web shell-worker shell-postgres
+.PHONY: help init preflight up up-local down restart logs logs-web logs-worker logs-traefik status ps upgrade backup restore clean scale-workers health shell-web shell-worker shell-postgres install-man uninstall-man
 
 # Default target
 .DEFAULT_GOAL := help
@@ -201,3 +201,21 @@ info: ## Show deployment information
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@test -f .env && cat .env | grep -E '^(N8N_HOST|N8N_PROTOCOL|EXECUTIONS_MODE|DATABASE_URL|POSTGRES_HOST)' || echo ".env not found"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# ============================================================================
+# MANUAL PAGES
+# ============================================================================
+install-man: ## Install man pages (requires sudo)
+	@echo "Installing man pages..."
+	@sudo mkdir -p /usr/local/share/man/man1
+	@sudo cp man/man1/n8nctl.1 /usr/local/share/man/man1/
+	@sudo chmod 644 /usr/local/share/man/man1/n8nctl.1
+	@sudo mandb 2>/dev/null || sudo makewhatis 2>/dev/null || true
+	@echo "✅ Man pages installed"
+	@echo "   View with: man n8nctl"
+
+uninstall-man: ## Uninstall man pages (requires sudo)
+	@echo "Removing man pages..."
+	@sudo rm -f /usr/local/share/man/man1/n8nctl.1
+	@sudo mandb 2>/dev/null || sudo makewhatis 2>/dev/null || true
+	@echo "✅ Man pages removed"

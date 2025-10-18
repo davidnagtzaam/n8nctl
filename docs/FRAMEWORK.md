@@ -1,6 +1,6 @@
 # Framework Guide - Reusable Script Framework
 
-This document explains how to use the n8n-deploy project structure as a framework for creating your own automation scripts.
+This document explains how to use the n8nctl project structure as a framework for creating your own automation scripts.
 
 ## 📁 Project Structure
 
@@ -73,8 +73,8 @@ mkdir my-automation-project
 cd my-automation-project
 
 # Copy the framework
-cp -r /path/to/n8n-deploy/lib ./
-cp -r /path/to/n8n-deploy/examples ./
+cp -r /path/to/n8nctl/lib ./
+cp -r /path/to/n8nctl/examples ./
 
 # Create your scripts directory
 mkdir scripts
@@ -86,8 +86,8 @@ nano scripts/install.sh
 ### Option 2: Use as Template
 
 ```bash
-# Clone/copy entire n8n-deploy
-cp -r /path/to/n8n-deploy my-automation-project
+# Clone/copy entire n8nctl
+cp -r /path/to/n8nctl my-automation-project
 cd my-automation-project
 
 # Remove n8n-specific scripts, keep framework
@@ -659,8 +659,8 @@ execute "apt-get install nginx"
 - **UI Framework Reference**: See `/lib/README.md`
 - **Complete API**: See `/LIB-UI-REFERENCE.md`
 - **Live Demo**: Run `/examples/demo-ui.sh`
-- **Production Examples**: See n8n-deploy `/scripts/` directory
-- **CLI Tool Example**: See n8n-deploy `/scripts/n8nctl`
+- **Production Examples**: See n8nctl `/scripts/` directory
+- **CLI Tool Example**: See n8nctl `/scripts/n8nctl`
 
 ## 🎯 Checklist for New Projects
 
@@ -709,5 +709,5 @@ Start creating your first script and enjoy the consistent, professional experien
 
 **Framework Version**: 1.0  
 **Last Updated**: October 17, 2025  
-**Based on**: n8n-deploy by David Nagtzaam  
+**Based on**: n8nctl by David Nagtzaam  
 **Website**: https://davidnagtzaam.com
