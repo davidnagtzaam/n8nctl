@@ -29,13 +29,13 @@ Complete command-line interface for managing your n8n deployment.
 
 ## Installation
 
-`n8nctl` is automatically installed with the n8n-deploy project.
+`n8nctl` is automatically installed with the n8nctl project.
 
 ### Make It Globally Available (Optional)
 
 ```bash
 # Create symlink in /usr/local/bin
-sudo ln -s /opt/n8n-deploy/scripts/n8nctl /usr/local/bin/n8nctl
+sudo ln -s /opt/n8nctl/scripts/n8nctl /usr/local/bin/n8nctl
 
 # Now run from anywhere
 n8nctl status
@@ -527,14 +527,14 @@ n8nctl logs n8n-worker | grep "Executing workflow"
 **Solution**:
 ```bash
 # Run with full path
-/opt/n8n-deploy/scripts/n8nctl status
+/opt/n8nctl/scripts/n8nctl status
 
 # Or create alias
-echo 'alias n8nctl="/opt/n8n-deploy/scripts/n8nctl"' >> ~/.bashrc
+echo 'alias n8nctl="/opt/n8nctl/scripts/n8nctl"' >> ~/.bashrc
 source ~/.bashrc
 
 # Or symlink to system path
-sudo ln -s /opt/n8n-deploy/scripts/n8nctl /usr/local/bin/n8nctl
+sudo ln -s /opt/n8nctl/scripts/n8nctl /usr/local/bin/n8nctl
 ```
 
 ---
@@ -562,10 +562,10 @@ sudo usermod -aG docker $USER
 **Solution**:
 ```bash
 # Force stop
-sudo docker compose -f /opt/n8n-deploy/compose.yaml down -t 30
+sudo docker compose -f /opt/n8nctl/compose.yaml down -t 30
 
 # If still hanging, force kill
-sudo docker compose -f /opt/n8n-deploy/compose.yaml kill
+sudo docker compose -f /opt/n8nctl/compose.yaml kill
 ```
 
 ---
@@ -601,22 +601,22 @@ sudo docker compose exec postgres pg_dump -U n8n n8n > /tmp/manual-backup.sql
 sudo crontab -e
 
 # Add line:
-0 2 * * * /opt/n8n-deploy/scripts/n8nctl backup && cp /tmp/n8n-backup-*.tgz /mnt/backups/
+0 2 * * * /opt/n8nctl/scripts/n8nctl backup && cp /tmp/n8n-backup-*.tgz /mnt/backups/
 ```
 
 #### Health Check Monitoring
 ```bash
 # Check health every 5 minutes, alert on failure
-*/5 * * * * /opt/n8n-deploy/scripts/n8nctl health || /usr/bin/send-alert.sh
+*/5 * * * * /opt/n8nctl/scripts/n8nctl health || /usr/bin/send-alert.sh
 ```
 
 #### Auto-scaling Based on Time
 ```bash
 # Scale up during business hours
-0 8 * * 1-5 /opt/n8n-deploy/scripts/n8nctl scale 5
+0 8 * * 1-5 /opt/n8nctl/scripts/n8nctl scale 5
 
 # Scale down at night
-0 18 * * 1-5 /opt/n8n-deploy/scripts/n8nctl scale 2
+0 18 * * 1-5 /opt/n8nctl/scripts/n8nctl scale 2
 ```
 
 ---
@@ -756,5 +756,5 @@ n8nctl logs | tail -n 10
 
 **Version**: 1.0  
 **Last Updated**: October 17, 2025  
-**Part of**: n8n-deploy by David Nagtzaam  
+**Part of**: n8nctl by David Nagtzaam  
 **Website**: https://davidnagtzaam.com

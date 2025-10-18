@@ -300,7 +300,7 @@ Without gum, all functions still work with terminal-friendly fallbacks.
 
 - Gum Repository: https://github.com/charmbracelet/gum
 - Charm.sh: https://charm.sh
-- This Framework: Part of n8n-deploy project by David Nagtzaam
+- This Framework: Part of n8nctl project by David Nagtzaam
 
 ---
 

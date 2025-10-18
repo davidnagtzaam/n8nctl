@@ -63,42 +63,42 @@ print_help() {
         
         gum style --foreground 5 "Created by: David Nagtzaam - https://davidnagtzaam.com"
     else
-        echo ""
-        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo -e "${CYAN}${BOLD}n8nctl - n8n Control Tool${NC}"
-        echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-        echo ""
-        echo -e "${CYAN}Usage:${NC}"
-        echo "  n8nctl <command> [options]"
-        echo ""
-        echo -e "${CYAN}Commands:${NC}"
-        echo -e "  ${GREEN}status${NC}              Show service status"
-        echo -e "  ${GREEN}logs${NC} [service]      View logs (all or specific service)"
-        echo -e "  ${GREEN}restart${NC}             Restart all services"
-        echo -e "  ${GREEN}stop${NC}                Stop all services"
-        echo -e "  ${GREEN}start${NC}               Start all services"
-        echo -e "  ${GREEN}test${NC}                Run deployment tests"
-        echo -e "  ${GREEN}validate${NC}            Validate environment configuration"
-        echo -e "  ${GREEN}migrate${NC}             Safe version migration"
-        echo -e "  ${GREEN}upgrade${NC}             Upgrade to latest version"
-        echo -e "  ${GREEN}backup${NC}              Create backup"
-        echo -e "  ${GREEN}restore${NC} <file>      Restore from backup"
-        echo -e "  ${GREEN}scale${NC} <count>       Scale workers to <count>"
-        echo -e "  ${GREEN}health${NC}              Run health checks"
-        echo -e "  ${GREEN}version${NC}             Show n8n version"
-        echo -e "  ${GREEN}shell${NC} <service>     Open shell in container"
-        echo -e "  ${GREEN}exec${NC} <service> <cmd> Execute command in container"
-        echo -e "  ${GREEN}help${NC}                Show this help"
-        echo ""
-        echo -e "${CYAN}Examples:${NC}"
-        echo "  n8nctl status"
-        echo "  n8nctl logs n8n-web"
-        echo "  n8nctl scale 5"
-        echo "  n8nctl backup"
-        echo "  n8nctl restore /tmp/backup.tgz"
-        echo ""
-        echo -e "${CYAN}Created by:${NC} David Nagtzaam - https://davidnagtzaam.com"
-        echo ""
+        cat <<EOF
+${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}
+${CYAN}${BOLD}n8nctl - n8n Control Tool${NC}
+${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}
+
+${CYAN}Usage:${NC}
+  n8nctl <command> [options]
+
+${CYAN}Commands:${NC}
+  ${GREEN}status${NC}              Show service status
+  ${GREEN}logs${NC} [service]      View logs (all or specific service)
+  ${GREEN}restart${NC}             Restart all services
+  ${GREEN}stop${NC}                Stop all services
+  ${GREEN}start${NC}               Start all services
+  ${GREEN}test${NC}                Run deployment tests
+  ${GREEN}validate${NC}            Validate environment configuration
+  ${GREEN}migrate${NC}             Safe version migration
+  ${GREEN}upgrade${NC}             Upgrade to latest version
+  ${GREEN}backup${NC}              Create backup
+  ${GREEN}restore${NC} <file>      Restore from backup
+  ${GREEN}scale${NC} <count>       Scale workers to <count>
+  ${GREEN}health${NC}              Run health checks
+  ${GREEN}version${NC}             Show n8n version
+  ${GREEN}shell${NC} <service>     Open shell in container
+  ${GREEN}exec${NC} <service> <cmd> Execute command in container
+  ${GREEN}help${NC}                Show this help
+
+${CYAN}Examples:${NC}
+  n8nctl status
+  n8nctl logs n8n-web
+  n8nctl scale 5
+  n8nctl backup
+  n8nctl restore /tmp/backup.tgz
+
+${CYAN}Created by:${NC} David Nagtzaam - https://davidnagtzaam.com
+EOF
     fi
 }
 

@@ -18,8 +18,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-REPO_URL="https://github.com/davidnagtzaam/n8n-deploy.git"
-INSTALL_DIR="/opt/n8n-deploy"
+REPO_URL="https://github.com/davidnagtzaam/n8nctl.git"
+INSTALL_DIR="/opt/n8nctl"
 
 print_header() {
     echo ""

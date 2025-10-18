@@ -143,7 +143,7 @@ create_backup_metadata() {
 Backup Information
 ==================
 Timestamp: $TIMESTAMP
-Created by: n8n-deploy backup script
+Created by: n8nctl backup script
 Created by: David Nagtzaam - https://davidnagtzaam.com
 Hostname: $(hostname)
 n8n Version: $(docker compose exec -T n8n-web n8n --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || echo "unknown")

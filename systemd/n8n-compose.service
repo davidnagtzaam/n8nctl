@@ -29,7 +29,7 @@ Type=oneshot
 RemainAfterExit=yes
 
 # Working directory (update this during installation)
-WorkingDirectory=/opt/n8n-deploy
+WorkingDirectory=/opt/n8nctl
 
 # Start command (automatically detects local vs external DB)
 ExecStartPre=/bin/bash -c 'docker compose ps postgres &>/dev/null && export USE_LOCAL_DB=true || export USE_LOCAL_DB=false'
@@ -57,7 +57,7 @@ TimeoutStopSec=120
 ProtectSystem=strict
 ProtectHome=yes
 NoNewPrivileges=yes
-ReadWritePaths=/opt/n8n-deploy
+ReadWritePaths=/opt/n8nctl
 
 [Install]
 WantedBy=multi-user.target

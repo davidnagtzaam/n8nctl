@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Initial Release
 
-Complete n8n deployment and management tool with professional code quality.
+Complete n8n deployment and management tool.
 
 #### Core Features
 
@@ -55,7 +55,7 @@ Complete n8n deployment and management tool with professional code quality.
 
 #### Technical Highlights
 
-- **Code Quality**: Professional coding standards with comprehensive inline comments
+- **Code Principles**: Latest coding standards with comprehensive inline comments
 - **Error Handling**: Robust error management with `set -euo pipefail`
 - **Modularity**: Shared UI library following DRY principles
 - **Security**: Secure file permissions, credential management
@@ -113,5 +113,5 @@ See `TODO.md` for planned enhancements and feature roadmap.
 
 **Project**: n8nctl  
 **Author**: David Nagtzaam  
-**License**: MPL-2.0  
+**License**: MIT  
 **Website**: https://davidnagtzaam.com

@@ -9,12 +9,14 @@ A comprehensive, professional tool for deploying and managing n8n in production 
 ## ✨ Features
 
 ### Deployment & Setup
+
 - 🎯 Interactive setup wizard
 - ✓ Pre-flight validation
 - ✓ Environment configuration validation
 - ✓ Automated testing suite
 
 ### Operations & Maintenance
+
 - 💾 Comprehensive backup system with verification
 - ♻️ Full restore functionality
 - 🔄 Safe migration process
@@ -23,11 +25,13 @@ A comprehensive, professional tool for deploying and managing n8n in production 
 - 📋 Centralized log management
 
 ### Storage Flexibility
+
 - 📁 Local filesystem storage (simple)
 - ☁️ S3-compatible storage (scalable)
 - ⚙️ Flexible configuration options
 
 ### Architecture
+
 - 🐳 Docker Compose orchestration
 - 👷 Queue mode with scalable workers
 - 🔒 Traefik reverse proxy with automatic HTTPS
@@ -131,15 +135,19 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 ### Deployment
 
 1. **Pre-Flight Checks**
+
    ```bash
    sudo ./scripts/preflight.sh
    ```
+
    Validates system requirements before deployment.
 
 2. **Interactive Setup**
+
    ```bash
    sudo ./scripts/init.sh
    ```
+
    Guides you through:
    - Domain configuration
    - Database setup (local or external)
@@ -148,9 +156,11 @@ sudo ./scripts/upgrade.sh           # Upgrade version
    - Encryption key generation
 
 3. **Validation**
+
    ```bash
    ./scripts/validate-env.sh
    ```
+
    Validates `.env` configuration for errors and placeholders.
 
 4. **Testing**
@@ -162,17 +172,20 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 ### Backup & Restore
 
 **Create Backup:**
+
 ```bash
 sudo ./scripts/backup.sh
 ```
 
 Creates backup including:
+
 - PostgreSQL database
 - n8n workflows and credentials
 - Configuration files
 - Metadata with timestamp
 
 **Restore from Backup:**
+
 ```bash
 sudo ./scripts/restore.sh /tmp/n8n-backup-<timestamp>.tgz
 ```
@@ -182,6 +195,7 @@ Restores complete system state from backup.
 **Backup Configuration:**
 
 Edit `.env` to configure retention:
+
 ```bash
 # Keep 7 most recent local backups
 BACKUP_RETENTION_LOCAL=7
@@ -193,11 +207,13 @@ BACKUP_DESTINATION=/tmp
 ### Migration & Upgrades
 
 **Safe Migration:**
+
 ```bash
 sudo ./scripts/migrate.sh
 ```
 
 Performs safe version upgrade with:
+
 - Automatic pre-migration backup
 - Image pull and update
 - Database migration (automatic)
@@ -205,6 +221,7 @@ Performs safe version upgrade with:
 - Rollback capability if issues occur
 
 **Quick Upgrade:**
+
 ```bash
 sudo ./scripts/upgrade.sh
 ```
@@ -243,6 +260,7 @@ Quick upgrade without full migration process.
 ```
 
 Performs comprehensive health checks:
+
 - Service status
 - API responsiveness
 - Database connectivity
@@ -257,11 +275,13 @@ Performs comprehensive health checks:
 ### Storage Options
 
 **Local Filesystem** (default):
+
 ```bash
 N8N_DEFAULT_BINARY_DATA_MODE=default
 ```
 
 **S3-Compatible Storage** (recommended for production):
+
 ```bash
 N8N_DEFAULT_BINARY_DATA_MODE=s3
 S3_ENDPOINT_URL=https://s3.us-west-002.backblazeb2.com
@@ -274,6 +294,7 @@ S3_FORCE_PATH_STYLE=true
 ### Database Options
 
 **Local PostgreSQL:**
+
 ```bash
 POSTGRES_USER=n8n
 POSTGRES_PASSWORD=strong_password
@@ -281,6 +302,7 @@ POSTGRES_DB=n8n
 ```
 
 **External PostgreSQL:**
+
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/n8n
 ```
@@ -304,28 +326,28 @@ BACKUP_SCHEDULE=0 2 * * *
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      Internet                            │
-│                          ↓                               │
-│                    ┌──────────┐                          │
+│                      Internet                           │
+│                          ↓                              │
+│                    ┌──────────┐                         │
 │                    │ Traefik  │ (Port 80/443)           │
 │                    │  Proxy   │ (Auto HTTPS)            │
-│                    └──────────┘                          │
-│                          ↓                               │
-│              ┌───────────┴───────────┐                   │
-│              ↓                       ↓                   │
+│                    └──────────┘                         │
+│                          ↓                              │
+│              ┌───────────┴───────────┐                  │
+│              ↓                       ↓                  │
 │         ┌─────────┐           ┌──────────┐              │
 │         │ n8n-web │           │ n8n-     │              │
 │         │         │           │ worker   │ (Scalable)   │
 │         └─────────┘           └──────────┘              │
-│              ↓                       ↓                   │
-│         ┌────────────────────────────┘                   │
-│         ↓                  ↓                             │
+│              ↓                       ↓                  │
+│         ┌────────────────────────────┘                  │
+│         ↓                  ↓                            │
 │    ┌─────────┐      ┌────────────┐                      │
 │    │  Redis  │      │ PostgreSQL │                      │
 │    │  Queue  │      │  Database  │                      │
 │    └─────────┘      └────────────┘                      │
-│                                                          │
-│    Storage: Local filesystem OR S3-compatible            │
+│                                                         │
+│    Storage: Local filesystem OR S3-compatible           │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -340,6 +362,7 @@ Run the comprehensive test suite:
 ```
 
 Tests include:
+
 - Environment configuration
 - Docker availability
 - Service health
@@ -404,13 +427,13 @@ tar -tzf /tmp/n8n-backup-<timestamp>.tgz | less
 
 ## 📊 Requirements
 
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | 1 core | 2+ cores |
-| RAM | 2GB | 4GB+ |
-| Disk | 10GB | 20GB+ |
-| Docker | 20.10+ | Latest |
-| OS | Ubuntu 20.04 | Ubuntu 22.04+ |
+| Component | Minimum      | Recommended   |
+| --------- | ------------ | ------------- |
+| CPU       | 1 core       | 2+ cores      |
+| RAM       | 2GB          | 4GB+          |
+| Disk      | 10GB         | 20GB+         |
+| Docker    | 20.10+       | Latest        |
+| OS        | Ubuntu 20.04 | Ubuntu 22.04+ |
 
 ---
 
@@ -468,7 +491,7 @@ Contributions are welcome! Please:
 
 ## 📄 License
 
-Mozilla Public License 2.0 (MPL-2.0) - See LICENSE file for details
+GNU General Public License 3.0 - See LICENSE file for details
 
 ---
 

@@ -19,9 +19,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib/lib-ui.sh"
 
 # Variables
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ENV_TEMPLATE="$PROJECT_ROOT/.env.template"
-ENV_FILE="$PROJECT_ROOT/.env"
 generate_random_string() {
     local length="${1:-32}"
     openssl rand -base64 "$length" | tr -d "=+/" | cut -c1-"$length"
@@ -360,24 +357,6 @@ EOF
 }
 
 # ============================================================================
-# Install n8nctl to PATH
-# ============================================================================
-
-install_n8nctl() {
-    print_header "Installing n8nctl Command"
-    
-    if prompt_yes_no "Add n8nctl to system PATH for easy access?" "y"; then
-        print_info "Installing n8nctl to /usr/local/bin..."
-        
-        # Create symlink to n8nctl in /usr/local/bin
-        ln -sf "$PROJECT_ROOT/scripts/n8nctl" /usr/local/bin/n8nctl
-        
-        print_success "n8nctl installed! You can now use 'n8nctl' from anywhere."
-        print_info "Try: n8nctl help"
-    fi
-}
-
-# ============================================================================
 # Initial Deployment
 # ============================================================================
 
@@ -440,6 +419,29 @@ print_summary() {
     echo ""
 }
 
+install_man_pages() {
+    print_header "Installing Documentation"
+    
+    print_info "Installing man pages for n8nctl..."
+    
+    if [ -f "$PROJECT_ROOT/man/man1/n8nctl.1" ]; then
+        if mkdir -p /usr/local/share/man/man1 2>/dev/null && \
+           cp "$PROJECT_ROOT/man/man1/n8nctl.1" /usr/local/share/man/man1/ 2>/dev/null && \
+           chmod 644 /usr/local/share/man/man1/n8nctl.1 2>/dev/null; then
+            
+            # Update man database
+            mandb 2>/dev/null || makewhatis 2>/dev/null || true
+            
+            print_success "Man pages installed successfully"
+            print_info "View documentation with: man n8nctl"
+        else
+            print_warning "Could not install man pages (non-critical)"
+        fi
+    fi
+    
+    echo ""
+}
+
 # ============================================================================
 # Main Execution
 # ============================================================================
@@ -477,11 +479,11 @@ main() {
     # Setup systemd
     setup_systemd
     
-    # Install n8nctl to PATH
-    install_n8nctl
-    
     # Deploy
     initial_deployment
+    
+    # Install man pages
+    install_man_pages
     
     # Show summary
     print_summary
