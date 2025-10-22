@@ -23,17 +23,31 @@ source "$SCRIPT_DIR/../lib/lib-ui.sh"
 ERRORS=0
 WARNINGS=0
 
-# Override error and warning functions to track counts
-_original_print_error=$(declare -f print_error)
-_original_print_warning=$(declare -f print_warning)
+# Save original functions with different names
+_original_print_error() {
+    if $USE_GUM; then
+        gum style --foreground 1 --bold "[ERROR] $1"
+    else
+        echo -e "${RED}${BOLD}[ERROR] $1${NC}"
+    fi
+}
 
+_original_print_warning() {
+    if $USE_GUM; then
+        gum style --foreground 3 "[WARN] $1"
+    else
+        echo -e "${YELLOW}[WARN] $1${NC}"
+    fi
+}
+
+# Override error and warning functions to track counts
 print_error() {
-    eval "${_original_print_error/print_error/}"
+    _original_print_error "$1"
     ((ERRORS++))
 }
 
 print_warning() {
-    eval "${_original_print_warning/print_warning/}"
+    _original_print_warning "$1"
     ((WARNINGS++))
 }
 

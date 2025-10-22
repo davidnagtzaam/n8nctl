@@ -77,68 +77,101 @@ check_dependencies() {
 }
 
 clone_repository() {
-    print_header "Downloading n8n Deployment"
-    
-    # Remove existing installation if present
-    if [[ -d "$INSTALL_DIR" ]]; then
-        print_info "Existing installation found, backing up..."
-        mv "$INSTALL_DIR" "${INSTALL_DIR}.backup-$(date +%Y%m%d-%H%M%S)"
-    fi
-    
-    print_info "Cloning repository to $INSTALL_DIR..."
-    git clone --depth=1 "$REPO_URL" "$INSTALL_DIR"
-    
-    cd "$INSTALL_DIR"
-    chmod +x scripts/*.sh
-    
-    print_success "Repository cloned successfully"
+    print_header "Downloading n8nctl"
+
+    # Create temporary directory
+    local temp_dir=$(mktemp -d)
+
+    print_info "Cloning repository..."
+    git clone --depth=1 "$REPO_URL" "$temp_dir"
+
+    print_success "Repository downloaded"
+
+    echo "$temp_dir"
 }
 
 run_installation() {
-    print_header "Starting Installation"
-    
-    cd "$INSTALL_DIR"
-    
-    # Run preflight checks
+    local temp_dir="$1"
+
+    print_header "Installing n8nctl"
+
+    cd "$temp_dir"
+
+    # Run installation script
+    print_info "Running installation..."
+    bash install.sh
+
+    # Clean up temp directory
+    cd /
+    rm -rf "$temp_dir"
+
+    print_success "Installation complete"
+}
+
+run_setup() {
+    print_header "n8n Setup"
+
     print_info "Running preflight checks..."
-    bash scripts/preflight.sh
-    
-    # Run interactive setup
-    print_info "Starting interactive setup..."
-    bash scripts/init.sh
+    n8nctl preflight
+
+    echo ""
+    read -p "Continue with n8n setup? (y/N): " -n 1 -r
+    echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Starting interactive setup..."
+        n8nctl init
+    else
+        print_info "Setup skipped. Run 'sudo n8nctl init' when ready."
+    fi
 }
 
 main() {
     clear
-    
-    print_header "n8n Production Deployment - Bootstrap Installer"
+
+    print_header "n8nctl Bootstrap Installer"
     echo ""
     print_info "Created by David Nagtzaam - https://davidnagtzaam.com"
     echo ""
-    print_info "This will install n8n in: $INSTALL_DIR"
+    print_info "This will:"
+    echo "  1. Download n8nctl from GitHub"
+    echo "  2. Install to $INSTALL_DIR"
+    echo "  3. Make 'n8nctl' available system-wide"
+    echo "  4. Run preflight checks"
+    echo "  5. Start interactive n8n setup"
     echo ""
-    
+
     read -p "Continue with installation? (y/N): " -n 1 -r
     echo
-    
+
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         print_info "Installation cancelled"
         exit 0
     fi
-    
+
+    echo ""
     check_root
     check_dependencies
-    clone_repository
-    run_installation
-    
-    print_header "Bootstrap Complete!"
+
+    # Download and install
+    local temp_dir=$(clone_repository)
+    run_installation "$temp_dir"
+
+    # Run setup
+    run_setup
+
+    print_header "Bootstrap Complete! 🎉"
     echo ""
-    print_success "n8n deployment has been installed to $INSTALL_DIR"
+    print_success "n8nctl is now installed and ready to use"
     echo ""
-    print_info "Useful commands:"
-    echo "  cd $INSTALL_DIR"
-    echo "  make status"
-    echo "  make logs"
+    print_info "Quick reference:"
+    echo "  • View status:    n8nctl status"
+    echo "  • View logs:      n8nctl logs tail"
+    echo "  • Create backup:  n8nctl backup"
+    echo "  • Get help:       n8nctl help"
+    echo "  • Man page:       man n8nctl"
+    echo ""
+    print_info "Installation directory: $INSTALL_DIR"
     echo ""
 }
 

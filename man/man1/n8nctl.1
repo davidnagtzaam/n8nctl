@@ -10,33 +10,37 @@ is a comprehensive tool for deploying and managing n8n workflow automation in pr
 .PP
 The tool supports both BashingUI (enhanced interface with gum) and Basic UI modes, with automatic fallback based on system capabilities and user preferences.
 .SH COMMANDS
+.SS Setup & Installation
+.TP
+.B init
+Run the interactive setup wizard to configure n8n for first-time deployment. Requires sudo/root privileges.
+.TP
+.B preflight
+Check system requirements and verify all prerequisites are met. Requires sudo/root privileges.
+.SS Service Management
+.TP
+.B start
+Start all n8n services with automatic detection of local or external database mode.
+.TP
+.B stop
+Stop all n8n services gracefully.
+.TP
+.B restart
+Restart all n8n services.
 .TP
 .B status
 Show the current status of all n8n services including uptime and health.
 .TP
-.B logs [\fIservice\fR]
-View logs for all services or a specific service (n8n-web, n8n-worker, postgres, redis, traefik).
+.B scale \fIcount\fR
+Scale the number of worker instances to the specified count.
+.SS Logs & Monitoring
 .TP
-.B restart
-Restart all n8n services gracefully.
+.B logs [\fIsubcommand\fR] [\fIservice\fR]
+Advanced log management. Subcommands: tail (follow logs), show (display recent logs), search (search pattern), errors (show only errors), export (save logs to file), list (list available services).
 .TP
-.B stop
-Stop all n8n services.
-.TP
-.B start
-Start all n8n services.
-.TP
-.B test
-Run comprehensive deployment tests to verify system functionality.
-.TP
-.B validate
-Validate environment configuration and check for common issues.
-.TP
-.B migrate
-Perform safe version migration with automatic backup and rollback capability.
-.TP
-.B upgrade
-Upgrade to the latest n8n version with pre-upgrade checks and verification.
+.B health
+Run comprehensive health checks on all services and infrastructure.
+.SS Operations
 .TP
 .B backup
 Create a comprehensive backup including database, configuration files, and workflows.
@@ -44,17 +48,24 @@ Create a comprehensive backup including database, configuration files, and workf
 .B restore \fIfile\fR
 Restore from a backup file. Supports local and S3-stored backups.
 .TP
-.B scale \fIcount\fR
-Scale the number of worker instances to the specified count.
+.B migrate
+Perform safe version migration with automatic pre-migration backup and rollback capability. Requires sudo.
 .TP
-.B health
-Run comprehensive health checks on all services and infrastructure.
+.B upgrade
+Upgrade to the latest n8n version with pre-upgrade checks and verification. Requires sudo.
+.SS Utilities
+.TP
+.B test
+Run comprehensive deployment tests to verify system functionality.
+.TP
+.B validate
+Validate environment configuration and check for common issues.
 .TP
 .B version
 Display the current n8n version and build information.
 .TP
-.B shell \fIservice\fR
-Open an interactive shell in the specified service container.
+.B shell [\fIservice\fR]
+Open an interactive shell in the specified service container (default: n8n-web).
 .TP
 .B exec \fIservice\fR \fIcommand\fR
 Execute a command in the specified service container.
@@ -79,14 +90,29 @@ Enhanced interface using the 'gum' tool from Charm.sh.
 Clean fallback interface with ANSI colors.
 .SH EXAMPLES
 .TP
+.B sudo n8nctl init
+Run first-time interactive setup.
+.TP
 .B n8nctl status
 Show current service status.
 .TP
+.B n8nctl logs tail n8n-web
+Follow logs from the n8n-web service in real-time.
+.TP
+.B n8nctl logs search "error"
+Search all logs for error messages.
+.TP
 .B n8nctl backup
-Create a backup.
+Create a backup of the entire system.
+.TP
+.B n8nctl restore /tmp/n8n-backup-20241018.tgz
+Restore from a specific backup file.
 .TP
 .B n8nctl scale 5
-Scale to 5 workers.
+Scale to 5 worker instances.
+.TP
+.B sudo n8nctl migrate
+Perform a safe version migration with automatic backup.
 .SH AUTHOR
 Created by David Nagtzaam <https://davidnagtzaam.com>
 .SH LICENSE

@@ -15,22 +15,22 @@ Complete n8n deployment and management tool.
 
 **Deployment & Setup**
 
-- Interactive setup wizard (`init.sh`)
-- Pre-flight validation checks (`preflight.sh`)
-- Environment configuration validation (`validate-env.sh`)
-- Automated testing suite (`test.sh`)
+- Interactive setup wizard
+- Pre-flight validation checks
+- Environment configuration validation
+- Automated testing suite
 
 **Operations & Maintenance**
 
-- Comprehensive backup system (`backup.sh`)
+- Comprehensive backup system
 - Backup verification capability
 - Smart retention management (configurable local backup limits)
 - Disk space monitoring and warnings
-- Full restore functionality (`restore.sh`)
-- Safe migration process (`migrate.sh`)
-- Service upgrade management (`upgrade.sh`)
-- Health check monitoring (`healthcheck.sh`)
-- Centralized log management (`logs.sh`)
+- Full restore functionality
+- Safe migration process
+- Service upgrade management
+- Health check monitoring
+- Centralized log management
 
 **Storage Options**
 
@@ -40,8 +40,8 @@ Complete n8n deployment and management tool.
 
 **User Interface**
 
-- Professional CLI tool (`n8nctl`)
-- Consistent UI library with symbol support (✓ ✗ ○ ● → ℹ ⚠)
+- Professional CLI tool
+- Consistent UI library with symbol support
 - Graceful fallbacks for non-TTY environments
 - Optional gum integration for enhanced UI
 
@@ -52,47 +52,6 @@ Complete n8n deployment and management tool.
 - Traefik reverse proxy with automatic HTTPS
 - Redis for distributed task queue
 - PostgreSQL database (local or external)
-
-#### Technical Highlights
-
-- **Code Principles**: Latest coding standards with comprehensive inline comments
-- **Error Handling**: Robust error management with `set -euo pipefail`
-- **Modularity**: Shared UI library following DRY principles
-- **Security**: Secure file permissions, credential management
-- **Testing**: Automated test suite covering all major components
-- **Documentation**: Comprehensive guides and inline documentation
-
-#### Files Included
-
-**Core Scripts**
-
-- `scripts/init.sh` - Interactive deployment wizard
-- `scripts/test.sh` - Automated testing suite
-- `scripts/validate-env.sh` - Environment validation
-- `scripts/migrate.sh` - Safe migration process
-- `scripts/backup.sh` - Backup with verification
-- `scripts/restore.sh` - Restore from backup
-- `scripts/upgrade.sh` - Version upgrades
-- `scripts/healthcheck.sh` - Health monitoring
-- `scripts/logs.sh` - Log management
-- `scripts/preflight.sh` - Pre-deployment checks
-- `scripts/n8nctl` - Main CLI interface
-
-**Libraries**
-
-- `lib/lib-ui.sh` - Shared UI components
-
-**Configuration**
-
-- `compose.yaml` - Main Docker Compose configuration
-- `compose.local-db.yaml` - Optional local PostgreSQL
-- `.env.template` - Environment configuration template
-
-**Documentation**
-
-- `README.md` - Complete setup and usage guide
-- `TODO.md` - Future enhancement roadmap
-- `CHANGELOG.md` - This file
 
 #### Requirements
 

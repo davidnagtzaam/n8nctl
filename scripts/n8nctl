@@ -33,32 +33,45 @@ print_help() {
         echo "  n8nctl <command> [options]"
         echo ""
         
-        gum style --foreground 6 --bold "Commands:"
-        echo "  $(gum style --foreground 2)status$(gum style --foreground 7)              Show service status"
-        echo "  $(gum style --foreground 2)logs$(gum style --foreground 7) [service]      View logs (all or specific service)"
-        echo "  $(gum style --foreground 2)restart$(gum style --foreground 7)             Restart all services"
-        echo "  $(gum style --foreground 2)stop$(gum style --foreground 7)                Stop all services"
+        gum style --foreground 6 --bold "Setup & Installation:"
+        echo "  $(gum style --foreground 2)init$(gum style --foreground 7)                Interactive setup wizard"
+        echo "  $(gum style --foreground 2)preflight$(gum style --foreground 7)           Check system requirements"
+        echo ""
+        gum style --foreground 6 --bold "Service Management:"
         echo "  $(gum style --foreground 2)start$(gum style --foreground 7)               Start all services"
-        echo "  $(gum style --foreground 2)test$(gum style --foreground 7)                Run deployment tests"
-        echo "  $(gum style --foreground 2)validate$(gum style --foreground 7)            Validate environment configuration"
-        echo "  $(gum style --foreground 2)migrate$(gum style --foreground 7)             Safe version migration"
-        echo "  $(gum style --foreground 2)upgrade$(gum style --foreground 7)             Upgrade to latest version"
+        echo "  $(gum style --foreground 2)stop$(gum style --foreground 7)                Stop all services"
+        echo "  $(gum style --foreground 2)restart$(gum style --foreground 7)             Restart all services"
+        echo "  $(gum style --foreground 2)status$(gum style --foreground 7)              Show service status"
+        echo "  $(gum style --foreground 2)scale$(gum style --foreground 7) <count>       Scale workers to <count>"
+        echo ""
+        gum style --foreground 6 --bold "Logs & Monitoring:"
+        echo "  $(gum style --foreground 2)logs$(gum style --foreground 7) [cmd] [svc]   Log management (tail|show|search|errors|export|list)"
+        echo "  $(gum style --foreground 2)health$(gum style --foreground 7)              Run health checks"
+        echo ""
+        gum style --foreground 6 --bold "Operations:"
         echo "  $(gum style --foreground 2)backup$(gum style --foreground 7)              Create backup"
         echo "  $(gum style --foreground 2)restore$(gum style --foreground 7) <file>      Restore from backup"
-        echo "  $(gum style --foreground 2)scale$(gum style --foreground 7) <count>       Scale workers to <count>"
-        echo "  $(gum style --foreground 2)health$(gum style --foreground 7)              Run health checks"
+        echo "  $(gum style --foreground 2)migrate$(gum style --foreground 7)             Safe version migration"
+        echo "  $(gum style --foreground 2)upgrade$(gum style --foreground 7)             Upgrade to latest version"
+        echo ""
+        gum style --foreground 6 --bold "Utilities:"
+        echo "  $(gum style --foreground 2)test$(gum style --foreground 7)                Run deployment tests"
+        echo "  $(gum style --foreground 2)validate$(gum style --foreground 7)            Validate environment configuration"
         echo "  $(gum style --foreground 2)version$(gum style --foreground 7)             Show n8n version"
         echo "  $(gum style --foreground 2)shell$(gum style --foreground 7) <service>     Open shell in container"
-        echo "  $(gum style --foreground 2)exec$(gum style --foreground 7) <service> <cmd> Execute command in container"
+        echo "  $(gum style --foreground 2)exec$(gum style --foreground 7) <svc> <cmd>    Execute command in container"
+        echo "  $(gum style --foreground 2)uninstall$(gum style --foreground 7)           Remove n8nctl from system"
         echo "  $(gum style --foreground 2)help$(gum style --foreground 7)                Show this help"
         echo ""
         
         gum style --foreground 6 --bold "Examples:"
-        echo "  n8nctl status"
-        echo "  n8nctl logs n8n-web"
-        echo "  n8nctl scale 5"
-        echo "  n8nctl backup"
-        echo "  n8nctl restore /tmp/backup.tgz"
+        echo "  n8nctl init                      # First-time setup"
+        echo "  n8nctl status                    # Check service health"
+        echo "  n8nctl logs tail n8n-web         # Follow web logs"
+        echo "  n8nctl logs search \"error\"       # Search for errors"
+        echo "  n8nctl scale 5                   # Scale to 5 workers"
+        echo "  n8nctl backup                    # Create backup"
+        echo "  n8nctl restore /tmp/backup.tgz   # Restore from backup"
         echo ""
         
         gum style --foreground 5 "Created by: David Nagtzaam - https://davidnagtzaam.com"
@@ -71,31 +84,44 @@ ${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━�
 ${CYAN}Usage:${NC}
   n8nctl <command> [options]
 
-${CYAN}Commands:${NC}
-  ${GREEN}status${NC}              Show service status
-  ${GREEN}logs${NC} [service]      View logs (all or specific service)
-  ${GREEN}restart${NC}             Restart all services
-  ${GREEN}stop${NC}                Stop all services
+${CYAN}Setup & Installation:${NC}
+  ${GREEN}init${NC}                Interactive setup wizard
+  ${GREEN}preflight${NC}           Check system requirements
+
+${CYAN}Service Management:${NC}
   ${GREEN}start${NC}               Start all services
-  ${GREEN}test${NC}                Run deployment tests
-  ${GREEN}validate${NC}            Validate environment configuration
-  ${GREEN}migrate${NC}             Safe version migration
-  ${GREEN}upgrade${NC}             Upgrade to latest version
+  ${GREEN}stop${NC}                Stop all services
+  ${GREEN}restart${NC}             Restart all services
+  ${GREEN}status${NC}              Show service status
+  ${GREEN}scale${NC} <count>       Scale workers to <count>
+
+${CYAN}Logs & Monitoring:${NC}
+  ${GREEN}logs${NC} [cmd] [svc]   Log management (tail|show|search|errors|export|list)
+  ${GREEN}health${NC}              Run health checks
+
+${CYAN}Operations:${NC}
   ${GREEN}backup${NC}              Create backup
   ${GREEN}restore${NC} <file>      Restore from backup
-  ${GREEN}scale${NC} <count>       Scale workers to <count>
-  ${GREEN}health${NC}              Run health checks
+  ${GREEN}migrate${NC}             Safe version migration
+  ${GREEN}upgrade${NC}             Upgrade to latest version
+
+${CYAN}Utilities:${NC}
+  ${GREEN}test${NC}                Run deployment tests
+  ${GREEN}validate${NC}            Validate environment configuration
   ${GREEN}version${NC}             Show n8n version
   ${GREEN}shell${NC} <service>     Open shell in container
-  ${GREEN}exec${NC} <service> <cmd> Execute command in container
+  ${GREEN}exec${NC} <svc> <cmd>    Execute command in container
+  ${GREEN}uninstall${NC}           Remove n8nctl from system
   ${GREEN}help${NC}                Show this help
 
 ${CYAN}Examples:${NC}
-  n8nctl status
-  n8nctl logs n8n-web
-  n8nctl scale 5
-  n8nctl backup
-  n8nctl restore /tmp/backup.tgz
+  n8nctl init                      # First-time setup
+  n8nctl status                    # Check service health
+  n8nctl logs tail n8n-web         # Follow web logs
+  n8nctl logs search "error"       # Search for errors
+  n8nctl scale 5                   # Scale to 5 workers
+  n8nctl backup                    # Create backup
+  n8nctl restore /tmp/backup.tgz   # Restore from backup
 
 ${CYAN}Created by:${NC} David Nagtzaam - https://davidnagtzaam.com
 EOF
@@ -109,14 +135,8 @@ cmd_status() {
 }
 
 cmd_logs() {
-    cd "$PROJECT_ROOT"
-    local service="${1:-}"
-    
-    if [[ -z "$service" ]]; then
-        docker compose logs -f --tail=100
-    else
-        docker compose logs -f --tail=100 "$service"
-    fi
+    # Enhanced logs command - delegates to logs.sh with full functionality
+    bash "$SCRIPT_DIR/logs.sh" "$@"
 }
 
 cmd_restart() {
@@ -199,7 +219,13 @@ cmd_validate() {
 }
 
 cmd_migrate() {
-    sudo bash "$SCRIPT_DIR/migrate.sh"
+    # User should already be root when calling this command
+    if [[ $EUID -ne 0 ]]; then
+        print_error "The migrate command requires sudo/root privileges"
+        echo "Run: sudo n8nctl migrate"
+        exit 1
+    fi
+    bash "$SCRIPT_DIR/migrate.sh"
 }
 
 cmd_version() {
@@ -223,17 +249,57 @@ cmd_shell() {
 
 cmd_exec() {
     local service="${1:-}"
-    shift
-    local command=("$@")
-    
+
     if [[ -z "$service" ]]; then
         print_error "Service name required"
         echo "Usage: n8nctl exec <service> <command>"
         exit 1
     fi
-    
+
+    shift
+    local command=("$@")
+
     cd "$PROJECT_ROOT"
     docker compose exec "$service" "${command[@]}"
+}
+
+cmd_init() {
+    # Run the interactive setup wizard
+    if [[ $EUID -ne 0 ]]; then
+        print_error "The init command requires sudo/root privileges"
+        echo "Run: sudo n8nctl init"
+        exit 1
+    fi
+    bash "$SCRIPT_DIR/init.sh" "$@"
+}
+
+cmd_preflight() {
+    # Run preflight system checks
+    if [[ $EUID -ne 0 ]]; then
+        print_error "The preflight command requires sudo/root privileges"
+        echo "Run: sudo n8nctl preflight"
+        exit 1
+    fi
+    bash "$SCRIPT_DIR/preflight.sh" "$@"
+}
+
+cmd_uninstall() {
+    # Run uninstallation
+    if [[ $EUID -ne 0 ]]; then
+        print_error "The uninstall command requires sudo/root privileges"
+        echo "Run: sudo n8nctl uninstall"
+        exit 1
+    fi
+
+    # Determine uninstall script location
+    local uninstall_script="$PROJECT_ROOT/uninstall.sh"
+
+    if [[ ! -f "$uninstall_script" ]]; then
+        print_error "Uninstall script not found at: $uninstall_script"
+        exit 1
+    fi
+
+    bash "$uninstall_script" "$@"
 }
 
 # Main execution
@@ -242,6 +308,15 @@ main() {
     shift || true
     
     case "$command" in
+        init)
+            cmd_init "$@"
+            ;;
+        preflight)
+            cmd_preflight "$@"
+            ;;
+        uninstall)
+            cmd_uninstall "$@"
+            ;;
         status)
             cmd_status "$@"
             ;;

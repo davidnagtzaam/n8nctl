@@ -64,9 +64,9 @@ list_services() {
     cd "$PROJECT_ROOT"
     
     local services=$(docker compose ps --format json 2>/dev/null | jq -r '.Name' 2>/dev/null || echo "")
-    
+
     if [ -z "$services" ]; then
-        print_warn "No services running"
+        print_warning "No services running"
         echo ""
         print_info "Start services with: docker compose up -d"
         return 1
@@ -178,15 +178,15 @@ search_logs() {
     echo ""
     
     cd "$PROJECT_ROOT"
-    
+
     if [ -n "$service" ] && [ "$service" != "all" ]; then
         docker compose logs --no-log-prefix "$service" 2>/dev/null | grep -i --color=always "$pattern" || {
-            print_warn "No matches found for: $pattern"
+            print_warning "No matches found for: $pattern"
             return 1
         }
     else
         docker compose logs --no-log-prefix 2>/dev/null | grep -i --color=always "$pattern" || {
-            print_warn "No matches found for: $pattern"
+            print_warning "No matches found for: $pattern"
             return 1
         }
     fi

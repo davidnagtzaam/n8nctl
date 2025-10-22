@@ -29,15 +29,16 @@ source "$SCRIPT_DIR_UI/lib-config.sh"
 # ============================================================================
 
 # Colors for fallback mode
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'
-export BLUE='\033[0;34m'
-export CYAN='\033[0;36m'
-export MAGENTA='\033[0;35m'
-export BOLD='\033[1m'
-export DIM='\033[2m'
-export NC='\033[0m'
+# Note: Not exported to avoid conflicts with gum's environment variable parsing
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
 
 # Professional symbols (Unicode, not emojis)
 export SYMBOL_SUCCESS="✓"  # Checkmark

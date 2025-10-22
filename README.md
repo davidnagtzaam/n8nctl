@@ -2,7 +2,7 @@
 
 **Version 1.0.0** | Production Ready
 
-A comprehensive, professional tool for deploying and managing n8n in production environments.
+A comprehensive tool for deploying and managing n8n self-hosted in production environments.
 
 ---
 
@@ -52,80 +52,101 @@ A comprehensive, professional tool for deploying and managing n8n in production 
 
 ### Installation
 
+#### Step 1: Download and Extract
+
 ```bash
+# Download the latest release
+wget https://github.com/davidnagtzaam/n8nctl/releases/latest/download/n8nctl.tar.gz
+
 # Extract the archive
-tar -xzf n8nctl-v1.0.0.tar.gz
+tar -xzf n8nctl.tar.gz
 cd n8nctl
+```
 
-# Make scripts executable
-chmod +x scripts/*.sh scripts/n8nctl
+#### Step 2: Install n8nctl
 
+```bash
+# Install to /opt/n8nctl (requires sudo)
+sudo bash install.sh
+```
+
+This will:
+
+- Install n8nctl to `/opt/n8nctl`
+- Create system-wide `n8nctl` command
+- Install man pages
+- Set proper permissions
+
+#### Step 3: Check Requirements
+
+```bash
 # Run pre-flight checks
-sudo ./scripts/preflight.sh
+sudo n8nctl preflight
+```
 
-# Interactive setup
-sudo ./scripts/init.sh
+#### Step 4: Configure and Deploy
+
+```bash
+# Interactive setup wizard
+sudo n8nctl init
 ```
 
 That's it! Your n8n instance will be running with automatic HTTPS.
+
+### Uninstallation
+
+```bash
+# Remove n8nctl (preserves data)
+sudo n8nctl uninstall
+
+# Remove n8nctl and all data
+sudo n8nctl uninstall --remove-data
+
+# Remove n8nctl, data, and configuration
+sudo n8nctl uninstall --remove-data --remove-config
+```
 
 ---
 
 ## 📖 Usage
 
-### Main CLI Tool
-
-The `n8nctl` command provides quick access to all operations:
+The `n8nctl` command is your complete interface for all operations:
 
 ```bash
-# Service management
-n8nctl status              # Show service status
+# Setup & Installation
+sudo n8nctl init           # Interactive setup wizard
+sudo n8nctl preflight      # Check system requirements
+
+# Service Management
 n8nctl start               # Start all services
 n8nctl stop                # Stop all services
 n8nctl restart             # Restart services
-
-# Operations
-n8nctl test                # Run deployment tests
-n8nctl validate            # Validate configuration
-n8nctl backup              # Create backup
-n8nctl restore <file>      # Restore from backup
-n8nctl migrate             # Safe version migration
-n8nctl upgrade             # Upgrade to latest
-
-# Monitoring
-n8nctl health              # Run health checks
-n8nctl logs [service]      # View logs
-n8nctl version             # Show n8n version
-
-# Scaling
+n8nctl status              # Show service status
 n8nctl scale 5             # Scale workers to 5
 
-# Help
-n8nctl help                # Show all commands
-```
-
-### Individual Scripts
-
-You can also run scripts directly:
-
-```bash
-# Deployment
-sudo ./scripts/init.sh              # Interactive setup
-sudo ./scripts/preflight.sh         # Pre-flight checks
-
-# Validation & Testing
-./scripts/validate-env.sh           # Validate configuration
-./scripts/test.sh                   # Run test suite
+# Logs & Monitoring
+n8nctl logs tail           # Follow all logs
+n8nctl logs tail n8n-web   # Follow specific service
+n8nctl logs show -n 500    # Show last 500 lines
+n8nctl logs search "error" # Search for errors
+n8nctl logs errors         # Show only errors
+n8nctl logs export         # Export logs to file
+n8nctl logs list           # List available services
+n8nctl health              # Run health checks
 
 # Operations
-sudo ./scripts/backup.sh            # Create backup
-sudo ./scripts/restore.sh <file>    # Restore backup
-sudo ./scripts/migrate.sh           # Safe migration
-sudo ./scripts/upgrade.sh           # Upgrade version
+n8nctl backup              # Create backup
+n8nctl restore <file>      # Restore from backup
+sudo n8nctl migrate        # Safe version migration
+sudo n8nctl upgrade        # Upgrade to latest
 
-# Monitoring
-./scripts/healthcheck.sh            # Health checks
-./scripts/logs.sh [command]         # Log management
+# Utilities
+n8nctl test                # Run deployment tests
+n8nctl validate            # Validate configuration
+n8nctl version             # Show n8n version
+n8nctl shell <service>     # Open shell in container
+n8nctl exec <svc> <cmd>    # Execute command in container
+n8nctl help                # Show all commands
 ```
 
 ---
@@ -137,7 +158,7 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 1. **Pre-Flight Checks**
 
    ```bash
-   sudo ./scripts/preflight.sh
+   sudo n8nctl preflight
    ```
 
    Validates system requirements before deployment.
@@ -145,7 +166,7 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 2. **Interactive Setup**
 
    ```bash
-   sudo ./scripts/init.sh
+   sudo n8nctl init
    ```
 
    Guides you through:
@@ -158,14 +179,14 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 3. **Validation**
 
    ```bash
-   ./scripts/validate-env.sh
+   n8nctl validate
    ```
 
    Validates `.env` configuration for errors and placeholders.
 
 4. **Testing**
    ```bash
-   ./scripts/test.sh
+   n8nctl test
    ```
    Runs comprehensive tests on your deployment.
 
@@ -174,7 +195,7 @@ sudo ./scripts/upgrade.sh           # Upgrade version
 **Create Backup:**
 
 ```bash
-sudo ./scripts/backup.sh
+n8nctl backup
 ```
 
 Creates backup including:
@@ -187,7 +208,7 @@ Creates backup including:
 **Restore from Backup:**
 
 ```bash
-sudo ./scripts/restore.sh /tmp/n8n-backup-<timestamp>.tgz
+n8nctl restore /tmp/n8n-backup-<timestamp>.tgz
 ```
 
 Restores complete system state from backup.
@@ -209,7 +230,7 @@ BACKUP_DESTINATION=/tmp
 **Safe Migration:**
 
 ```bash
-sudo ./scripts/migrate.sh
+sudo n8nctl migrate
 ```
 
 Performs safe version upgrade with:
@@ -223,7 +244,7 @@ Performs safe version upgrade with:
 **Quick Upgrade:**
 
 ```bash
-sudo ./scripts/upgrade.sh
+sudo n8nctl upgrade
 ```
 
 Quick upgrade without full migration process.
@@ -232,31 +253,31 @@ Quick upgrade without full migration process.
 
 ```bash
 # View all logs in real-time
-./scripts/logs.sh tail
+n8nctl logs tail
 
 # View specific service
-./scripts/logs.sh tail n8n-web
+n8nctl logs tail n8n-web
 
 # Show recent logs
-./scripts/logs.sh show -n 500
+n8nctl logs show -n 500
 
 # Search logs
-./scripts/logs.sh search "error"
+n8nctl logs search "error"
 
 # Show only errors
-./scripts/logs.sh errors
+n8nctl logs errors
 
 # Export logs
-./scripts/logs.sh export
+n8nctl logs export
 
 # List services
-./scripts/logs.sh list
+n8nctl logs list
 ```
 
 ### Health Monitoring
 
 ```bash
-./scripts/healthcheck.sh
+n8nctl health
 ```
 
 Performs comprehensive health checks:
@@ -358,7 +379,7 @@ BACKUP_SCHEDULE=0 2 * * *
 Run the comprehensive test suite:
 
 ```bash
-./scripts/test.sh
+n8nctl test
 ```
 
 Tests include:
@@ -397,7 +418,7 @@ n8nctl health
 
 ```bash
 # Validate environment
-./scripts/validate-env.sh
+n8nctl validate
 
 # Check for placeholders
 grep -i "change_me\|your_\|example.com" .env
@@ -407,10 +428,10 @@ grep -i "change_me\|your_\|example.com" .env
 
 ```bash
 # Check database logs
-n8nctl logs postgres
+n8nctl logs tail postgres
 
 # Test database connectivity
-./scripts/test.sh
+n8nctl test
 ```
 
 ### Backup/Restore Issues
@@ -452,7 +473,7 @@ tar -tzf /tmp/n8n-backup-<timestamp>.tgz | less
 
 ```
 n8nctl/
-├── scripts/              # All operational scripts
+├── scripts/             # All operational scripts
 │   ├── init.sh          # Setup wizard
 │   ├── test.sh          # Test suite
 │   ├── validate-env.sh  # Config validation
