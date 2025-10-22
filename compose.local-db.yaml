@@ -16,8 +16,6 @@
 # reliability, automated backups, and point-in-time recovery.
 # ============================================================================
 
-version: '3.8'
-
 services:
   # ==========================================================================
   # POSTGRESQL - Local Database

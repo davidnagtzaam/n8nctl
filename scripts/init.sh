@@ -18,6 +18,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib/lib-ui.sh"
 
+# Project paths
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ENV_TEMPLATE="$PROJECT_ROOT/env.template"
+ENV_FILE="$PROJECT_ROOT/.env"
+
 # Variables
 generate_random_string() {
     local length="${1:-32}"
@@ -231,80 +236,75 @@ collect_optional_config() {
 
 create_env_file() {
     print_header "Creating Configuration File"
-    
+
     print_info "Generating .env file..."
-    
+
     # Copy template
     cp "$ENV_TEMPLATE" "$ENV_FILE"
-    
-    # Replace values using sed (cross-platform compatible)
-    sed_inline() {
-        if sed --version 2>&1 | grep -q GNU; then
-            sed -i "$@"
-        else
-            sed -i '' "$@"
-        fi
+
+    # Helper function to safely replace values in env file
+    # Uses awk instead of sed to avoid escaping issues with special characters
+    safe_sed_replace() {
+        local key="$1"
+        local value="$2"
+        local file="$3"
+
+        # Use awk to safely replace the value, handling any special characters
+        awk -v key="$key" -v val="$value" '
+        BEGIN { found=0 }
+        $0 ~ "^" key "=" { print key "=" val; found=1; next }
+        { print }
+        END { if (!found) print key "=" val }
+        ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
     }
-    
+
     # Core configuration
-    sed_inline "s|N8N_HOST=.*|N8N_HOST=$N8N_HOST|" "$ENV_FILE"
-    sed_inline "s|N8N_PROTOCOL=.*|N8N_PROTOCOL=$N8N_PROTOCOL|" "$ENV_FILE"
-    sed_inline "s|WEBHOOK_URL=.*|WEBHOOK_URL=$WEBHOOK_URL|" "$ENV_FILE"
-    sed_inline "s|N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=$N8N_ENCRYPTION_KEY|" "$ENV_FILE"
-    sed_inline "s|N8N_JWT_SECRET=.*|N8N_JWT_SECRET=$N8N_JWT_SECRET|" "$ENV_FILE"
+    safe_sed_replace "N8N_HOST" "$N8N_HOST" "$ENV_FILE"
+    safe_sed_replace "N8N_PROTOCOL" "$N8N_PROTOCOL" "$ENV_FILE"
+    safe_sed_replace "WEBHOOK_URL" "$WEBHOOK_URL" "$ENV_FILE"
+    safe_sed_replace "N8N_ENCRYPTION_KEY" "$N8N_ENCRYPTION_KEY" "$ENV_FILE"
+    safe_sed_replace "N8N_JWT_SECRET" "$N8N_JWT_SECRET" "$ENV_FILE"
     
     # Database configuration
     if [[ "$USE_EXTERNAL_DB" == true ]]; then
-        sed_inline "s|#.*DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|" "$ENV_FILE"
-        sed_inline "s|^DATABASE_URL=.*|DATABASE_URL=$DATABASE_URL|" "$ENV_FILE"
+        safe_sed_replace "DATABASE_URL" "$DATABASE_URL" "$ENV_FILE"
     else
-        sed_inline "s|POSTGRES_USER=.*|POSTGRES_USER=$POSTGRES_USER|" "$ENV_FILE"
-        sed_inline "s|POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" "$ENV_FILE"
-        sed_inline "s|POSTGRES_DB=.*|POSTGRES_DB=$POSTGRES_DB|" "$ENV_FILE"
-        sed_inline "s|POSTGRES_HOST=.*|POSTGRES_HOST=$POSTGRES_HOST|" "$ENV_FILE"
-        sed_inline "s|POSTGRES_PORT=.*|POSTGRES_PORT=$POSTGRES_PORT|" "$ENV_FILE"
+        safe_sed_replace "POSTGRES_USER" "$POSTGRES_USER" "$ENV_FILE"
+        safe_sed_replace "POSTGRES_PASSWORD" "$POSTGRES_PASSWORD" "$ENV_FILE"
+        safe_sed_replace "POSTGRES_DB" "$POSTGRES_DB" "$ENV_FILE"
+        safe_sed_replace "POSTGRES_HOST" "$POSTGRES_HOST" "$ENV_FILE"
+        safe_sed_replace "POSTGRES_PORT" "$POSTGRES_PORT" "$ENV_FILE"
     fi
-    
+
     # Storage configuration
     if [[ "$USE_LOCAL_STORAGE" == true ]]; then
         # Local filesystem storage
-        sed_inline "s|N8N_DEFAULT_BINARY_DATA_MODE=.*|N8N_DEFAULT_BINARY_DATA_MODE=default|" "$ENV_FILE"
-        # Comment out S3 variables since they're not used
-        sed_inline "s|^S3_ENDPOINT_URL=|#S3_ENDPOINT_URL=|" "$ENV_FILE"
-        sed_inline "s|^S3_BUCKET=|#S3_BUCKET=|" "$ENV_FILE"
-        sed_inline "s|^S3_ACCESS_KEY_ID=|#S3_ACCESS_KEY_ID=|" "$ENV_FILE"
-        sed_inline "s|^S3_SECRET_ACCESS_KEY=|#S3_SECRET_ACCESS_KEY=|" "$ENV_FILE"
-        sed_inline "s|^S3_FORCE_PATH_STYLE=|#S3_FORCE_PATH_STYLE=|" "$ENV_FILE"
+        safe_sed_replace "N8N_DEFAULT_BINARY_DATA_MODE" "default" "$ENV_FILE"
     else
         # S3 storage
-        sed_inline "s|N8N_DEFAULT_BINARY_DATA_MODE=.*|N8N_DEFAULT_BINARY_DATA_MODE=s3|" "$ENV_FILE"
-        sed_inline "s|#S3_ENDPOINT_URL=.*|S3_ENDPOINT_URL=$S3_ENDPOINT_URL|" "$ENV_FILE"
-        sed_inline "s|#S3_BUCKET=.*|S3_BUCKET=$S3_BUCKET|" "$ENV_FILE"
-        sed_inline "s|#S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID|" "$ENV_FILE"
-        sed_inline "s|#S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY|" "$ENV_FILE"
-        sed_inline "s|#S3_FORCE_PATH_STYLE=.*|S3_FORCE_PATH_STYLE=$S3_FORCE_PATH_STYLE|" "$ENV_FILE"
-        sed_inline "s|S3_ENDPOINT_URL=.*|S3_ENDPOINT_URL=$S3_ENDPOINT_URL|" "$ENV_FILE"
-        sed_inline "s|S3_BUCKET=.*|S3_BUCKET=$S3_BUCKET|" "$ENV_FILE"
-        sed_inline "s|S3_ACCESS_KEY_ID=.*|S3_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID|" "$ENV_FILE"
-        sed_inline "s|S3_SECRET_ACCESS_KEY=.*|S3_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY|" "$ENV_FILE"
-        sed_inline "s|S3_FORCE_PATH_STYLE=.*|S3_FORCE_PATH_STYLE=$S3_FORCE_PATH_STYLE|" "$ENV_FILE"
+        safe_sed_replace "N8N_DEFAULT_BINARY_DATA_MODE" "s3" "$ENV_FILE"
+        safe_sed_replace "S3_ENDPOINT_URL" "$S3_ENDPOINT_URL" "$ENV_FILE"
+        safe_sed_replace "S3_BUCKET" "$S3_BUCKET" "$ENV_FILE"
+        safe_sed_replace "S3_ACCESS_KEY_ID" "$S3_ACCESS_KEY_ID" "$ENV_FILE"
+        safe_sed_replace "S3_SECRET_ACCESS_KEY" "$S3_SECRET_ACCESS_KEY" "$ENV_FILE"
+        safe_sed_replace "S3_FORCE_PATH_STYLE" "$S3_FORCE_PATH_STYLE" "$ENV_FILE"
     fi
-    
+
     # Traefik
-    sed_inline "s|TRAEFIK_ACME_EMAIL=.*|TRAEFIK_ACME_EMAIL=$TRAEFIK_ACME_EMAIL|" "$ENV_FILE"
-    
+    safe_sed_replace "TRAEFIK_ACME_EMAIL" "$TRAEFIK_ACME_EMAIL" "$ENV_FILE"
+
     # Optional
-    sed_inline "s|GENERIC_TIMEZONE=.*|GENERIC_TIMEZONE=$GENERIC_TIMEZONE|" "$ENV_FILE"
-    
+    safe_sed_replace "GENERIC_TIMEZONE" "$GENERIC_TIMEZONE" "$ENV_FILE"
+
     # SMTP configuration
     if [[ "$CONFIGURE_SMTP" == true ]]; then
-        sed_inline "s|#.*N8N_EMAIL_MODE=.*|N8N_EMAIL_MODE=$N8N_EMAIL_MODE|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_HOST=.*|N8N_SMTP_HOST=$N8N_SMTP_HOST|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_PORT=.*|N8N_SMTP_PORT=$N8N_SMTP_PORT|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_USER=.*|N8N_SMTP_USER=$N8N_SMTP_USER|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_PASS=.*|N8N_SMTP_PASS=$N8N_SMTP_PASS|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_SENDER=.*|N8N_SMTP_SENDER=$N8N_SMTP_SENDER|" "$ENV_FILE"
-        sed_inline "s|#.*N8N_SMTP_SSL=.*|N8N_SMTP_SSL=$N8N_SMTP_SSL|" "$ENV_FILE"
+        safe_sed_replace "N8N_EMAIL_MODE" "$N8N_EMAIL_MODE" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_HOST" "$N8N_SMTP_HOST" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_PORT" "$N8N_SMTP_PORT" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_USER" "$N8N_SMTP_USER" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_PASS" "$N8N_SMTP_PASS" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_SENDER" "$N8N_SMTP_SENDER" "$ENV_FILE"
+        safe_sed_replace "N8N_SMTP_SSL" "$N8N_SMTP_SSL" "$ENV_FILE"
     fi
     
     # Secure the file
@@ -396,7 +396,7 @@ print_summary() {
     echo ""
     print_success "n8n is now running!"
     echo ""
-    print_info "Access your instance at: ${GREEN}https://${N8N_HOST}${NC}"
+    print_info "Access your instance at: https://${N8N_HOST}"
     echo ""
     print_warning "IMPORTANT: Save this information securely!"
     echo ""
@@ -447,8 +447,7 @@ install_man_pages() {
 # ============================================================================
 
 main() {
-    clear
-    
+    # First header clears the screen automatically (via print_header)
     print_header "n8n Production Deployment - Setup Wizard"
     echo ""
     print_info "Created by David Nagtzaam - https://davidnagtzaam.com"

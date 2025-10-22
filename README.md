@@ -489,7 +489,7 @@ n8nctl/
 │   └── lib-ui.sh        # UI components
 ├── compose.yaml         # Docker Compose config
 ├── compose.local-db.yaml # Local PostgreSQL config
-├── .env.template        # Configuration template
+├── env.template         # Configuration template
 ├── README.md            # This file
 ├── CHANGELOG.md         # Version history
 ├── TODO.md              # Future enhancements

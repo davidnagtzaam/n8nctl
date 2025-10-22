@@ -18,8 +18,6 @@
 #   docker compose -f compose.yaml -f compose.local-db.yaml up -d
 # ============================================================================
 
-version: '3.8'
-
 services:
   # ==========================================================================
   # TRAEFIK - Reverse Proxy with Automatic HTTPS

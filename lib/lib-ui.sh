@@ -153,6 +153,15 @@ print_banner() {
 
 print_header() {
     local text="$1"
+    local clear_screen="${2:-true}"  # Default: clear screen before header
+
+    # Clear screen for gum demo-style experience (unless disabled)
+    # Following gum's official demo.sh pattern: sleep briefly, then clear
+    if [[ "$clear_screen" == "true" ]] && $USE_GUM && $HAS_TTY; then
+        sleep 0.5
+        clear
+    fi
+
     echo ""
     if $USE_GUM; then
         gum style \
@@ -228,14 +237,14 @@ prompt_input() {
     local prompt="$1"
     local default="${2:-}"
     local placeholder="${3:-Enter value}"
-    
+
     if $USE_GUM; then
-        local gum_args=(--placeholder="$placeholder")
+        # Use gum's --prompt with plain text (no nested styling)
         if [[ -n "$default" ]]; then
-            gum_args+=(--value="$default")
+            gum input --prompt="$prompt: " --placeholder="$placeholder" --value="$default"
+        else
+            gum input --prompt="$prompt: " --placeholder="$placeholder"
         fi
-        gum_args+=(--prompt="$(gum style --foreground 6 "$prompt: ")")
-        gum input "${gum_args[@]}"
     else
         local value
         if [[ -n "$default" ]]; then
@@ -251,11 +260,10 @@ prompt_input() {
 prompt_password() {
     local prompt="$1"
     local placeholder="${2:-Enter password}"
-    
+
     if $USE_GUM; then
-        gum input --password \
-            --placeholder="$placeholder" \
-            --prompt="$(gum style --foreground 6 "$prompt: ")"
+        # Use gum's --prompt with plain text
+        gum input --password --prompt="$prompt: " --placeholder="$placeholder"
     else
         local value
         read -s -p "$(echo -e "${CYAN}$prompt: ${NC}")" value
@@ -267,12 +275,22 @@ prompt_password() {
 prompt_yes_no() {
     local prompt="$1"
     local default="${2:-n}"
-    
+
     if $USE_GUM; then
+        # gum confirm returns 0 for yes, 1 for no
+        # Only output y/n to stdout for the calling script to capture
         if [[ "$default" == "y" ]]; then
-            gum confirm "$prompt" --default=true && echo "y" || echo "n"
+            if gum confirm "$prompt" --default=true; then
+                echo "y"
+            else
+                echo "n"
+            fi
         else
-            gum confirm "$prompt" --default=false && echo "y" || echo "n"
+            if gum confirm "$prompt" --default=false; then
+                echo "y"
+            else
+                echo "n"
+            fi
         fi
         return 0
     else
@@ -284,7 +302,7 @@ prompt_yes_no() {
             read -p "$(echo -e "${CYAN}$prompt ${NC}[${RED}y${NC}/${GREEN}N${NC}]: ")" value
             value="${value:-n}"
         fi
-        
+
         [[ "$value" =~ ^[Yy]$ ]]
     fi
 }
@@ -293,12 +311,9 @@ prompt_choice() {
     local prompt="$1"
     shift
     local options=("$@")
-    
+
     if $USE_GUM; then
-        gum choose --header="$(gum style --foreground 212 --bold "$prompt")" \
-            --cursor.foreground="212" \
-            --height=15 \
-            "${options[@]}"
+        gum choose --header="$prompt" --cursor.foreground="212" --height=15 "${options[@]}"
     else
         echo -e "${CYAN}${BOLD}$prompt${NC}"
         select choice in "${options[@]}"; do
@@ -314,13 +329,9 @@ prompt_multi_choice() {
     local prompt="$1"
     shift
     local options=("$@")
-    
+
     if $USE_GUM; then
-        gum choose --header="$(gum style --foreground 212 --bold "$prompt")" \
-            --cursor.foreground="212" \
-            --height=15 \
-            --no-limit \
-            "${options[@]}"
+        gum choose --header="$prompt" --cursor.foreground="212" --height=15 --no-limit "${options[@]}"
     else
         echo -e "${CYAN}${BOLD}$prompt${NC}"
         echo -e "${DIM}(Enter numbers separated by spaces, e.g., '1 3 4')${NC}"
@@ -329,9 +340,9 @@ prompt_multi_choice() {
             echo "$i) $option"
             ((i++))
         done
-        
+
         read -p "$(echo -e ${CYAN}Select options: ${NC})" selections
-        
+
         # Convert selections to option names
         local selected=()
         for num in $selections; do
@@ -339,7 +350,7 @@ prompt_multi_choice() {
                 selected+=("${options[$((num-1))]}")
             fi
         done
-        
+
         printf '%s\n' "${selected[@]}"
     fi
 }

@@ -9,8 +9,27 @@
 
 set -euo pipefail
 
+# Resolve symlink to get actual installation directory
+# This handles the case where n8nctl is symlinked from /usr/local/bin
+resolve_link() {
+    local target="$1"
+
+    # Follow symlinks until we reach the actual file
+    while [ -L "$target" ]; do
+        target="$(readlink "$target")"
+        # If readlink returns a relative path, make it absolute
+        if [[ "$target" != /* ]]; then
+            target="$(dirname "$1")/$target"
+        fi
+    done
+
+    echo "$target"
+}
+
+SCRIPT_PATH="$(resolve_link "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+
 # Load shared UI library
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../lib/lib-ui.sh"
 
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
